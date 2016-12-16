@@ -1,13 +1,9 @@
 Program HelloWorld;
 
-Function MDC( a, b : Integer; teste : Real ): Integer;
-Begin
-  If a Mod b = 0 Then
-    Result := b
-  Else
-    Result := MDC( b, a Mod b, 1.0 );
-End; 
+Var
+  b: Array [0 .. 2] [0 .. 4] Of Integer;
 
 Begin
-  WriteLn( MDC( 48, 32, 1.0 ) );
+  b[2][4] := 3;
+  WriteLn( b[2][4] );
 End.	
