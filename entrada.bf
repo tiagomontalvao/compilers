@@ -6,9 +6,10 @@ Depoimentos
 	3. i é Integer;
 	4. str1 é String;
 	5. str2 é String;
-	6. vetor é Coligação de [10] Integer;
-	7. matriz é Coligação [10][67] de Integer;
-(*
+	6. v1 é Coligação de [10] Integer;
+	7. v2 é Coligação de [10] Real;
+	8. matriz é Coligação [10][67] de Integer;
+
 Function
 soma( a, b: Integer ) : Integer;
 Depoimentos
@@ -19,26 +20,23 @@ Príncipe
 	d recebe 4;
 	Result recebe a+b+c+d;
 Suíço;
-*)
+
 Príncipe
-	matriz[2][5] recebe 10;
-	Como printa, deputado? matriz[2][5];
-	(*
-	For i := 0 To 9 Do 
-		vetor[i] recebe i;
 
-	For i := 0 To 9 Do {
-		Como printa, deputado? vetor[i];
-	}
+	v2[0] recebe 1.0;
 
-	Como printa, deputado? ' ';
+	Como printa, deputado? 5 foi citado em v1;
+	Como printa, deputado? 'a';
+	Como printa, deputado? v1 == v2;
+	Como printa, deputado? 'b';
+	
 
+(*
 	For i := -2 To 10 Do {
 		Como printa, deputado? i;
 		Como printa, deputado? i foi citado em vetor;
 	}
-*)
-(*
+
 	Como printa, deputado? 2;
 	
 	str1 recebe 'como vota';

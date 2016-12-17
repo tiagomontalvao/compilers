@@ -25,8 +25,6 @@ enum TIPO { FUNCAO = -1, BASICO = 0, VETOR = 1, MATRIZ = 2 };
 struct Tipo {
   string tipo_base;
   TIPO ndim;
-  int inicio[MAX_DIM];
-  int fim[MAX_DIM];
   int tam[MAX_DIM];
   vector<Tipo> retorno; // usando vector por dois motivos:
   // 1) Para não usar ponteiros
@@ -127,7 +125,7 @@ string includes =
 %token TK_MAIG TK_MEIG TK_DIF TK_IF TK_THEN TK_ELSE TK_AND TK_OR TK_IN
 %token TK_FOR TK_WHILE TK_SWITCH TK_CASE TK_DEFAULT TK_BREAK TK_TO TK_DO TK_ARRAY TK_OF TK_PTPT TK_IS
 
-%left TK_AND TK_OR TK_IN
+%left TK_AND TK_OR TK_IN 
 %nonassoc '<' '>' TK_MAIG TK_MEIG '=' TK_IGU TK_DIF
 %left '+' '-'
 %left '*' '/' TK_MOD
@@ -485,8 +483,11 @@ ATRIB : TK_ID TK_ATRIB E
             erro( "Indice de array deve ser integer de zero dimensão: " +
                   $3.t.tipo_base + "/" + toString( $3.t.ndim ) );
 
-          if( $6.t.ndim != 0 || $6.t.tipo_base != tipoArray.tipo_base )
+          if( $6.t.ndim != 0 || $6.t.tipo_base != tipoArray.tipo_base ) {
+            cerr << $6.v << endl;
+            cerr << $6.t.tipo_base << ' ' << tipoArray.tipo_base << endl;
             erro( "Valor de tipo diferente sendo atribuido ao vetor " + $1.v );
+          }
 
           $$.c = $3.c + $6.c;
           if ( tipoArray.tipo_base == "s" )
@@ -853,8 +854,22 @@ Tipo tipo_resultado( Tipo t1, string opr, Tipo t3 ) {
   }
   else { // Testes para os operadores de comparacao de array
     if ( t1.ndim == 0 && t3.ndim == 1 ) {
-      if ( opr == "in" )
+
+      if ( opr == "in" ) {
+        if ( t1.tipo_base == t3.tipo_base )
+          return Tipo( "b" );
+        else
+          erro( "O operador in não está definido para o tipo '" + t1.tipo_base
+                + "' e array de '" + t3.tipo_base + "'." );
+      }
+    } else if ( t1.ndim == 1 && t3.ndim == 1 ) {
+      if ( opr == "==" ) {
         return Tipo( "b" );
+      }
+      else if ( opr == "!=" ) {
+        return Tipo( "b" );
+      }
+
     }
     return Tipo();
   }
@@ -867,14 +882,70 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
   ss.t = tipo_resultado( s1.t, opr, s3.t );
   ss.v = gera_nome_var_temp( ss.t.tipo_base );
 
-  /*if ( s1.ndim == 1 && s3.ndim == 1) {
-    if ( s1.t.tipo_base == s3.t.tipo_base ) {
-      if ( s1.fim == s3.fim ) {
-        ss.v = s1.c + s3.c +
-               "  " +
-      }
+  if ( s1.t.ndim == 1 && s3.t.ndim == 1) {
+    if ( opr == "==" || opr == "!" ) {
+      if ( ( s1.t.tipo_base == s3.t.tipo_base ) && ( s1.t.tam[0] == s3.t.tam[0] ) ){
+
+          string label_inicio = gera_label( "inicio_for" );
+          string label_fim = gera_label( "fim_for" );
+          string label_atrib_ss = gera_label( "atrib_ss" );
+          string label_meio_for = gera_label( "meio_for" );
+          string condicao_for = gera_nome_var_temp( "b" );
+          string condicao_if = gera_nome_var_temp( "b" );
+
+          string ind_for = gera_nome_var_temp( "i" );
+          string temp_1 = gera_nome_var_temp( s1.t.tipo_base );
+          string temp_2 = gera_nome_var_temp( s3.t.tipo_base );
+
+          string init = opr == "==" ? "1" : "0";
+          string compare = opr == "==" ? "!=" : "==";
+          string atrib = opr == "==" ? "0" : "1";
+
+          ss.c =  s1.c + s3.c +
+                  "  " + ss.v + " = " + init + ";\n" +
+                  "  " + ind_for + " = 0;\n" +
+                  label_inicio + ":;\n" +
+                  "  " + condicao_for + " = " + ind_for + " >= " + toString( s3.t.tam[0] ) + ";\n" +
+                  "  " + "if( " + condicao_for + " ) goto " + label_fim + ";\n" +
+                  "  " + temp_1 + " = " + s1.v + "[" + ind_for + "];\n" +
+                  "  " + temp_2 + " = " + s3.v + "[" + ind_for + "];\n" +
+                  "  " + condicao_if + " = " + temp_1 + " " + compare + " " + temp_2 + ";\n" +
+                  "  " + "if( " + condicao_if + " ) goto " + label_atrib_ss + ";\n" +
+                  label_meio_for + ":;\n" +
+                  "  " + ind_for + " = " + ind_for + " + 1;\n" +
+                  "  goto " + label_inicio + ";\n" +
+                  label_atrib_ss + ":;\n" +
+                  "    " + ss.v + " = " + atrib + ";\n" +
+                  "  goto " + label_meio_for + ";\n" +
+                  label_fim + ":;\n";
+                  return ss;
+
+      } else {
+        ss.c = s1.c + s3.c + "  " + ss.v + " = " + (opr == "==" ? "0" : "1") + ";\n";
+        return ss;
+      } 
     }
-  }*/
+  }
+
+/*
+  ss.v = 1;
+  i = 0;
+label_inicio_for_1:
+  cond_for = i >= tam;
+  if (cond_for) goto label_fim_for_2;
+  tmp1 = v1[i];
+  tmp2 = v2[i];
+  cond_if = tmp1 != tmp2;
+  if (cond_if) goto label_atrib_3;
+label_meio_for_4:
+  i = i + 1;
+  goto label_inicio_for_1;
+label_atrib_3:
+  ss.v = 0;
+  goto label_meio_for_4;
+label_fim_for_2:
+*/
+
 
   // verificar tipos !!!
   // tratar strings separadamente !!!
@@ -924,8 +995,6 @@ label_atrib_3:
   goto label_meio_for_4;
 label_fim_for_2:
 */
-
-
 
   if( s1.t.tipo_base == "s" && s3.t.tipo_base == "s" ) {
     // falta testar se é o operador "+"

@@ -35,7 +35,7 @@ COMMENT "(*"([^*]|"*"[^)])*"*)"
 "Else"     		{ yylval = Atributos( yytext ); return TK_ELSE; }
 "For"      		{ yylval = Atributos( yytext ); return TK_FOR; }
 "While"      	{ yylval = Atributos( yytext ); return TK_WHILE; }
-"Switch"	{ yylval = Atributos( yytext ); return TK_SWITCH; }
+"Switch"		{ yylval = Atributos( yytext ); return TK_SWITCH; }
 "Caso"			{ yylval = Atributos( yytext ); return TK_CASE; }
 "Default"		{ yylval = Atributos( yytext ); return TK_DEFAULT; }
 "Bessias"		{ yylval = Atributos( yytext ); return TK_BREAK; }
