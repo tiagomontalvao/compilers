@@ -126,15 +126,13 @@ string includes =
 
 %token TK_ID TK_CINT TK_CDOUBLE TK_VAR TK_PROGRAM TK_BEGIN TK_END TK_ATRIB
 %token TK_WRITELN TK_READ TK_CSTRING TK_FUNCTION TK_MOD TK_IGU
-%token TK_MAIG TK_MEIG TK_DIF TK_IF TK_THEN TK_ELSE TK_AND TK_OR
+%token TK_MAIG TK_MEIG TK_DIF TK_IF TK_THEN TK_ELSE TK_AND TK_OR TK_IN
 %token TK_FOR TK_WHILE TK_SWITCH TK_CASE TK_DEFAULT TK_BREAK TK_TO TK_DO TK_ARRAY TK_OF TK_PTPT TK_IS
 
-%left TK_AND TK_OR
+%left TK_AND TK_OR TK_IN
 %nonassoc '<' '>' TK_MAIG TK_MEIG '=' TK_IGU TK_DIF
 %left '+' '-'
 %left '*' '/' TK_MOD
-%nonassoc LOWER_THAN_ELSE
-%nonassoc TK_ELSE
 
 %%
 
@@ -533,6 +531,8 @@ E : E '+' E
     { $$ = gera_codigo_operador( $1, "+", $3 ); }
   | E '-' E
     { $$ = gera_codigo_operador( $1, "-", $3 ); }
+  | '-' E
+    { $$ = gera_codigo_operador( Atributos( "0", Tipo ("i") ), "-", $2 ); }
   | E '*' E
     { $$ = gera_codigo_operador( $1, "*", $3 ); }
   | E TK_MOD E
@@ -555,6 +555,8 @@ E : E '+' E
     { $$ = gera_codigo_operador( $1, "&&", $3 ); }
   | E TK_OR E
     { $$ = gera_codigo_operador( $1, "||", $3 ); }
+  | E TK_IN E
+    { $$ = gera_codigo_operador( $1, "in", $3 ); }
   | '(' E ')'
     { $$ = $2; }
   | F
@@ -850,6 +852,10 @@ Tipo tipo_resultado( Tipo t1, string opr, Tipo t3 ) {
     return Tipo( aux );
   }
   else { // Testes para os operadores de comparacao de array
+    if ( t1.ndim == 0 && t3.ndim == 1 ) {
+      if ( opr == "in" )
+        return Tipo( "b" );
+    }
     return Tipo();
   }
 }
@@ -869,6 +875,57 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
       }
     }
   }*/
+
+  // verificar tipos !!!
+  // tratar strings separadamente !!!
+  if ( opr == "in" ) {
+    string label_inicio = gera_label( "inicio_for" );
+    string label_fim = gera_label( "fim_for" );
+    string label_atrib_ss = gera_label( "atrib_ss" );
+    string label_meio_for = gera_label( "meio_for" );
+    string condicao_for = gera_nome_var_temp( "b" );
+    string condicao_if = gera_nome_var_temp( "b" );
+
+    string ind_for = gera_nome_var_temp( "i" );
+    string var_temp_aux = gera_nome_var_temp( s1.t.tipo_base );
+
+    ss.c =  s1.c + s3.c +
+            "  " + ss.v + " = 0;\n" +
+            "  " + ind_for + " = 0;\n" +
+            label_inicio + ":;\n" +
+            "  " + condicao_for + " = " + ind_for + " > " + toString( s3.t.fim[0] ) + ";\n" +
+            "  " + "if( " + condicao_for + " ) goto " + label_fim + ";\n" +
+            "  " + var_temp_aux + " = " + s3.v + "[" + ind_for + "];\n" +
+            "  " + condicao_if + " = " + var_temp_aux + " == " + s1.v + ";\n" +
+            "  " + "if( " + condicao_if + " ) goto " + label_atrib_ss + ";\n" +
+            label_meio_for + ":;\n" +
+            "  " + ind_for + " = " + ind_for + " + 1;\n" +
+            "  goto " + label_inicio + ";\n" +
+            label_atrib_ss + ":;\n" +
+            "    " + ss.v + " = 1;\n" +
+            "  goto " + label_meio_for + ";\n" +
+            label_fim + ":;\n";
+            return ss;
+  }
+/*
+  ss.v = 0;
+  i = 0;
+label_inicio_for_1:
+  cond_for = i >= tam;
+  if (cond_for) goto label_fim_for_2;
+  tmp = v[i];
+  cond_if = tmp == s1.v;
+  if (cond_if) goto label_atrib_3;
+label_meio_for_4:
+  i = i + 1;
+  goto label_inicio_for_1;
+label_atrib_3:
+  ss.v = 1;
+  goto label_meio_for_4;
+label_fim_for_2:
+*/
+
+
 
   if( s1.t.tipo_base == "s" && s3.t.tipo_base == "s" ) {
     // falta testar se é o operador "+"
@@ -1011,7 +1068,7 @@ string gera_teste_limite_array( string indice_1, Tipo tipoArray ) {
                                              var_teste_fim + ";\n";
 
   codigo += "  if( " + var_teste + " ) goto " + label_end + ";\n" +
-          "    printf( \"Limite de array ultrapassado: %d <= %d <= %d\", "+
+            "  printf( \"Limite de array ultrapassado: %d <= %d <= %d\", "+
                toString( tipoArray.inicio[0] ) + " ," + indice_1 + ", " +
                toString( tipoArray.fim[0] ) + " );\n" +
                "  cout << endl;\n" +
