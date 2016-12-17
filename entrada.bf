@@ -8,7 +8,7 @@ Depoimentos
 	5. str2 é String;
 	6. vetor é Coligação de [10] Integer;
 	7. matriz é Coligação [10][67] de Integer;
-
+(*
 Function
 soma( a, b: Integer ) : Integer;
 Depoimentos
@@ -19,9 +19,11 @@ Príncipe
 	d recebe 4;
 	Result recebe a+b+c+d;
 Suíço;
-
+*)
 Príncipe
-	
+	matriz[2][5] recebe 10;
+	Como printa, deputado? matriz[2][5];
+	(*
 	For i := 0 To 9 Do 
 		vetor[i] recebe i;
 
@@ -35,7 +37,7 @@ Príncipe
 		Como printa, deputado? i;
 		Como printa, deputado? i foi citado em vetor;
 	}
-
+*)
 (*
 	Como printa, deputado? 2;
 	

@@ -27,6 +27,7 @@ struct Tipo {
   TIPO ndim;
   int inicio[MAX_DIM];
   int fim[MAX_DIM];
+  int tam[MAX_DIM];
   vector<Tipo> retorno; // usando vector por dois motivos:
   // 1) Para não usar ponteiros
   // 2) Para ser genérico. Algumas linguagens permitem mais de um valor
@@ -40,20 +41,17 @@ struct Tipo {
     ndim = BASICO;
   }
 
-  Tipo( string base, int inicio, int fim  ) {
+  Tipo( string base, int tam ) {
     tipo_base = base;
     ndim = VETOR;
-    this->inicio[0] = inicio;
-    this->fim[0] = fim;
+    this->tam[0] = tam;
   }
 
-  Tipo( string base, int inicio_1, int fim_1, int inicio_2, int fim_2  ) {
+  Tipo( string base, int tam_0, int tam_1 ) {
     tipo_base = base;
     ndim = MATRIZ;
-    this->inicio[0] = inicio_1;
-    this->fim[0] = fim_1;
-    this->inicio[1] = inicio_2;
-    this->fim[1] = fim_2;
+    this->tam[0] = tam_0;
+    this->tam[1] = tam_1;
   }
 
   Tipo( Tipo retorno, vector<Tipo> params ) {
@@ -211,8 +209,9 @@ PARAM : IDS ':' TK_ID
       }
     | IDS ':' TK_ARRAY '[' TK_CINT TK_PTPT TK_CINT ']' '[' TK_CINT TK_PTPT TK_CINT ']' TK_OF TK_ID
       {
+        // Refactor
         Tipo tipo = Tipo( traduz_nome_tipo_pascal( $15.v ),
-                          toInt( $5.v ), toInt( $7.v ), toInt( $10.v ), toInt( $12.v ) );
+                          toInt( $7.v ), toInt( $12.v ) );
 
         $$ = Atributos();
         $$.lista_str = $1.lista_str;
@@ -250,7 +249,7 @@ VAR : IDS TK_IS TK_ID
     | IDS TK_IS TK_ARRAY TK_OF '[' TK_CINT ']' TK_ID
       {
         Tipo tipo = Tipo( traduz_nome_tipo_pascal( $8.v ),
-                          0, toInt( $6.v ) - 1);
+                          toInt( $6.v ));
         $$ = Atributos();
 
         for( int i = 0; i < $1.lista_str.size(); i ++ ) {
@@ -260,8 +259,9 @@ VAR : IDS TK_IS TK_ID
       }
     | IDS TK_IS TK_ARRAY '[' TK_CINT ']' '[' TK_CINT ']' TK_OF TK_ID
       {
+        // Refactor
         Tipo tipo = Tipo( traduz_nome_tipo_pascal( $11.v ),
-                          0, toInt( $5.v ), 0, toInt( $8.v ) );
+                          toInt( $5.v ), toInt( $8.v ) );
 
         $$ = Atributos();
 
@@ -412,7 +412,7 @@ ATRIB : TK_ID TK_ATRIB E
           $$.t = Tipo( tipoArray.tipo_base );
 
           if( tipoArray.ndim != 1 )
-            erro( "Variável " + $1.v + " não é array de uma dimensões" );
+            erro( "Variável " + $1.v + " não é array de uma dimensão" );
 
           if( $3.t.ndim != 0 || $3.t.tipo_base != "i" )
             erro( "Indice de array deve ser integer de zero dimensão: " +
@@ -447,7 +447,7 @@ ATRIB : TK_ID TK_ATRIB E
 
         $$.v = gera_nome_var_temp( $$.t.tipo_base );
 
-        int m = tipoArray.fim[1];
+        int m = tipoArray.tam[1];
 
         $$.c =  $3.c +
                 $6.c +
@@ -534,7 +534,7 @@ F : TK_CINT
         erro( "Indice de array deve ser integer de zero dimensão: " +
               $6.t.tipo_base + "/" + toString( $6.t.ndim ) );
 
-      int m = tipoArray.fim[1];
+      int m = tipoArray.tam[1];
       string idx_v = gera_nome_var_temp( $$.t.tipo_base );
       string idx_c = $3.v + " * " + to_string(m) + " + " + $6.v;
 
@@ -826,7 +826,7 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
             "  " + ss.v + " = 0;\n" +
             "  " + ind_for + " = 0;\n" +
             label_inicio + ":;\n" +
-            "  " + condicao_for + " = " + ind_for + " > " + toString( s3.t.fim[0] ) + ";\n" +
+            "  " + condicao_for + " = " + ind_for + " >= " + toString( s3.t.tam[0] ) + ";\n" +
             "  " + "if( " + condicao_for + " ) goto " + label_fim + ";\n" +
             "  " + var_temp_aux + " = " + s3.v + "[" + ind_for + "];\n" +
             "  " + condicao_if + " = " + var_temp_aux + " == " + s1.v + ";\n" +
@@ -970,13 +970,12 @@ string declara_variavel( string nome, Tipo tipo ) {
             break;
 
     case 1: indice = "[" + toString(
-                  (tipo.fim[0]-tipo.inicio[0]+1) *
-                  (tipo.tipo_base == "s" ? 256 : 1)
-                ) + "]";
+                  tipo.tam[0] * (tipo.tipo_base == "s" ? 256 : 1)
+                  ) + "]";
             break;
 
     case 2: indice = "[" +  toString(
-                              tipo.fim[0] * tipo.fim[1]
+                              tipo.tam[0] * tipo.tam[1]
                             ) + "]";
             break;
 
@@ -993,17 +992,16 @@ string gera_teste_limite_array( string indice_1, Tipo tipoArray ) {
   string var_teste = gera_nome_var_temp( "b" );
   string label_end = gera_label( "limite_array_ok" );
 
-  string codigo = "  " + var_teste_inicio + " = " + indice_1 + " >= " +
-                  toString( tipoArray.inicio[0] ) + ";\n" +
+  string codigo = "  " + var_teste_inicio + " = " + indice_1 + " >= 0;\n" +
                   "  " + var_teste_fim + " = " + indice_1 + " <= " +
-                  toString( tipoArray.fim[0] ) + ";\n" +
+                  toString( tipoArray.tam[0]-1 ) + ";\n" +
                   "  " + var_teste + " = " + var_teste_inicio + " && " +
                                              var_teste_fim + ";\n";
 
   codigo += "  if( " + var_teste + " ) goto " + label_end + ";\n" +
-            "  printf( \"Limite de array ultrapassado: %d <= %d <= %d\", "+
-               toString( tipoArray.inicio[0] ) + " ," + indice_1 + ", " +
-               toString( tipoArray.fim[0] ) + " );\n" +
+            "  printf( \"Limite de array ultrapassado: %d <= %d <= %d\", " +
+               "0 ," + indice_1 + ", " +
+               toString( tipoArray.tam[0]-1 ) + " );\n" +
                "  cout << endl;\n" +
                "  exit( 1 );\n" +
             "  " + label_end + ":;\n";
@@ -1019,17 +1017,16 @@ string gera_teste_limite_array( string indice_1, string indice_2, Tipo tipoArray
   string var_teste = gera_nome_var_temp( "b" );
   string label_end = gera_label( "limite_array_ok" );
 
-  string codigo = "  " + var_teste_inicio + " = " + indice_1 + " >= " +
-                  toString( tipoArray.inicio[0] ) + ";\n" +
+  string codigo = "  " + var_teste_inicio + " = " + indice_1 + " >= 0;\n" +
                   "  " + var_teste_fim + " = " + indice_1 + " <= " +
-                  toString( tipoArray.fim[0] ) + ";\n" +
+                  toString( tipoArray.tam[0]-1 ) + ";\n" +
                   "  " + var_teste + " = " + var_teste_inicio + " && " +
                                              var_teste_fim + ";\n";
 
   codigo += "  if( " + var_teste + " ) goto " + label_end + ";\n" +
-          "    printf( \"Limite de array ultrapassado: %d <= %d <= %d\", "+
-               toString( tipoArray.inicio[0] ) + " ," + indice_1 + ", " +
-               toString( tipoArray.fim[0] ) + " );\n" +
+            "  printf( \"Limite de array ultrapassado: %d <= %d <= %d\", " +
+               "0 ," + indice_1 + ", " +
+               toString( tipoArray.tam[0]-1 ) + " );\n" +
                "  cout << endl;\n" +
                "  exit( 1 );\n" +
             "  " + label_end + ":;\n";
