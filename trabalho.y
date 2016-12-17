@@ -379,7 +379,10 @@ ATRIB : TK_ID TK_ATRIB E
 
         int m = tipoArray.fim[1];
 
-        $$.c = $3.c + $6.c + $1.v + "[" + $3.v + " * " + to_string(m) + " + " + $6.v + "] = " + $9.v + ";\n";
+        $$.c =  $3.c +
+                $6.c +
+                $$.v + " = " + $3.v + " * " + to_string(m) + " + " + $6.v + ";\n" +
+                $1.v + "[" + $$.v + "] = " + $9.v + ";\n";
 
 //        $$.c = $3.c +
   //             gera_teste_limite_array( $3.v, $6.v, tipoArray ) +
@@ -455,11 +458,16 @@ F : TK_CINT
         erro( "Indice de array deve ser integer de zero dimensão: " +
               $6.t.tipo_base + "/" + toString( $6.t.ndim ) );
 
+      int m = tipoArray.fim[1];
+      string idx_v = gera_nome_var_temp( $$.t.tipo_base );
+      string idx_c = $3.v + " * " + to_string(m) + " + " + $6.v;
+
       $$.v = gera_nome_var_temp( $$.t.tipo_base );
 
-      int m = tipoArray.fim[1];
-
-      $$.c = $$.v + " = " + $3.c + $6.c + $1.v + "[" + $3.v + " * " + to_string(m) + " + " + $6.v + "];\n";
+        $$.c =  $3.c +
+                $6.c +
+                idx_v + " = " + idx_c + ";\n" +
+                $$.v + " = " + $1.v + "[" + idx_v + "];\n";
     }
   | TK_ID
     { $$.v = $1.v; $$.t = consulta_ts( $1.v ); $$.c = $1.c; }
