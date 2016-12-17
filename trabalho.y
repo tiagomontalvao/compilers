@@ -120,7 +120,7 @@ string includes =
 %}
 
 %token TK_ID TK_CINT TK_CDOUBLE TK_VAR TK_PROGRAM TK_BEGIN TK_END TK_ATRIB
-%token TK_WRITELN TK_CSTRING TK_FUNCTION TK_MOD TK_IGU
+%token TK_WRITELN TK_READ TK_CSTRING TK_FUNCTION TK_MOD TK_IGU
 %token TK_MAIG TK_MEIG TK_DIF TK_IF TK_THEN TK_ELSE TK_AND TK_OR
 %token TK_FOR TK_WHILE TK_TO TK_DO TK_ARRAY TK_OF TK_PTPT TK_IS
 
@@ -310,12 +310,21 @@ CMDS : CMD ';' CMDS
      ;
 
 CMD : WRITELN
+    | LEIA
     | ATRIB
     | CMD_IF
     | BLOCO
     | CMD_FOR
     | CMD_WHILE
+    | CMD_DO_WHILE
     ;
+
+LEIA :  TK_READ IDS
+        {
+          for( int i = 0; i < $2.lista_str.size(); i ++ ) {
+            $$.c += "cin >> " + $2.lista_str[i] + ";\n";
+          }
+        }
 
 CMD_WHILE : TK_WHILE E CMD
           {
@@ -332,6 +341,16 @@ CMD_WHILE : TK_WHILE E CMD
                     $3.c +
                     + "goto " + label_inicio + ";\n" +
                     label_fim + ":;\n";
+          }
+        ;
+
+CMD_DO_WHILE : TK_DO CMD TK_WHILE E
+          {
+            string label_inicio = gera_label( "inicio_while" );
+
+            $$.c =  label_inicio + ":\n" +
+                    $2.c +
+                    "if (" + $2.v + ") goto " + label_inicio + ";\n";
           }
         ;
 
