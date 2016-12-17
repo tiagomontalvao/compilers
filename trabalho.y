@@ -260,10 +260,10 @@ VAR : IDS TK_IS TK_ID
           insere_var_ts( $1.lista_str[i], tipo );
         }
       }
-    | IDS TK_IS TK_ARRAY '[' TK_CINT TK_PTPT TK_CINT ']' '[' TK_CINT TK_PTPT TK_CINT ']' TK_OF TK_ID
+    | IDS TK_IS TK_ARRAY '[' TK_CINT ']' '[' TK_CINT ']' TK_OF TK_ID
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_pascal( $15.v ),
-                          toInt( $5.v ), toInt( $7.v ), toInt( $10.v ), toInt( $12.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_pascal( $11.v ),
+                          0, toInt( $5.v ), 0, toInt( $8.v ) );
 
         $$ = Atributos();
 
@@ -354,8 +354,23 @@ ATRIB : TK_ID TK_ATRIB E
         { // Falta testar: tipo, limite do array, e se a variável existe
           cerr << $3.v << endl;
           Tipo tipoArray = consulta_ts( $1.v );
-          $$.c = $3.c + $6.c +
-                 "  " + $1.v + "[" + $3.v + "] = " + $6.v + ";\n";
+          $$.t = Tipo( tipoArray.tipo_base );
+
+          if( tipoArray.ndim != 1 )
+            erro( "Variável " + $1.v + " não é array de uma dimensões" );
+
+          if( $3.t.ndim != 0 || $3.t.tipo_base != "i" )
+            erro( "Indice de array deve ser integer de zero dimensão: " +
+                  $3.t.tipo_base + "/" + toString( $3.t.ndim ) );
+
+          if( $6.t.ndim != 0 || $6.t.tipo_base != tipoArray.tipo_base )
+            erro( "Valor de tipo diferente sendo atribuido ao vetor " + $1.v );
+
+          $$.c = $3.c + $6.c;
+          if ( tipoArray.tipo_base == "s" )
+            $$.c += "  strncpy( " + $1.v + ", " + $3.v + ", 256 );\n";
+          else
+           $$.c += "  " + $1.v + "[" + $3.v + "] = " + $6.v + ";\n";
         }
       | TK_ID '[' E ']' '[' E ']' TK_ATRIB E
         {
