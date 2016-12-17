@@ -2,25 +2,41 @@ Que Deus tenha misericórdia desta nação.
 
 Depoimentos
 	1. a é Integer;
-	1. b é Integer;
-	2. str1 é String;
-	3. str2 é String;
-	4. vetor é Coligação de [10] String;
-	5. matriz é Coligação [10][67] de Integer;
-
+	2. b é Integer;
+	3. i é Integer;
+	4. str1 é String;
+	5. str2 é String;
+	6. vetor é Coligação de [10] Integer;
+	7. matriz é Coligação [10][67] de Integer;
 
 Function
 soma( a, b: Integer ) : Integer;
-	Depoimentos
-		1. c é Integer;
-		1. d é Integer;
-	Príncipe
+Depoimentos
+	1. c é Integer;
+	2. d é Integer;
+Príncipe
 	c recebe 3;
 	d recebe 4;
 	Result recebe a+b+c+d;
 Suíço;
 
 Príncipe
+	
+	For i := 0 To 9 Do 
+		vetor[i] recebe i;
+
+	For i := 0 To 9 Do {
+		Como printa, deputado? vetor[i];
+	}
+
+	Como printa, deputado? ' ';
+
+	For i := -2 To 10 Do {
+		Como printa, deputado? i;
+		Como printa, deputado? i foi citado em vetor;
+	}
+
+(*
 	Como printa, deputado? 2;
 	
 	str1 recebe 'como vota';
@@ -41,7 +57,7 @@ Príncipe
 		a recebe a+1;
 	}
 
-(*
+
 	Como printa, deputado? soma(1, 2);
 
 	a recebe 0;
