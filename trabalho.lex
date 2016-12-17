@@ -7,7 +7,7 @@ char* troca_aspas( char* lexema );
 DELIM   [\t ]
 LINHA   [\n]
 NUMERO  [0-9]
-LETRA   [A-Za-z_]
+LETRA   [A-Za-z_çÇãÃ]
 INT     {NUMERO}+
 DOUBLE  {NUMERO}+("."{NUMERO}+)?
 ID      {LETRA}({LETRA}|{NUMERO})*
@@ -25,13 +25,15 @@ COMMENT "(*"([^*]|"*"[^)])*"*)"
 "é"        		{ yylval = Atributos( yytext ); return TK_IS; }
 "Que Deus tenha misericórdia desta nação" { yylval = Atributos( yytext ); return TK_PROGRAM; }
 "Príncipe"   	{ yylval = Atributos( yytext ); return TK_BEGIN; }
-"Suíco"      	{ yylval = Atributos( yytext ); return TK_END; }
+"{"   			{ yylval = Atributos( yytext ); return TK_BEGIN; }
+"Suíço"      	{ yylval = Atributos( yytext ); return TK_END; }
+"}"   			{ yylval = Atributos( yytext ); return TK_END; }
 "Como printa, deputado?"  { yylval = Atributos( yytext ); return TK_WRITELN; }
 "If"       		{ yylval = Atributos( yytext ); return TK_IF; }
 "Then"     		{ yylval = Atributos( yytext ); return TK_THEN; }
 "Else"     		{ yylval = Atributos( yytext ); return TK_ELSE; }
 "For"      		{ yylval = Atributos( yytext ); return TK_FOR; }
-"While"      		{ yylval = Atributos( yytext ); return TK_WHILE; }
+"While"      	{ yylval = Atributos( yytext ); return TK_WHILE; }
 "To"       		{ yylval = Atributos( yytext ); return TK_TO; }
 "Do"       		{ yylval = Atributos( yytext ); return TK_DO; }
 "Coligação"    	{ yylval = Atributos( yytext ); return TK_ARRAY; }
@@ -48,6 +50,7 @@ COMMENT "(*"([^*]|"*"[^)])*"*)"
 "=="       		{ yylval = Atributos( yytext ); return TK_IGU; }
 "!="       		{ yylval = Atributos( yytext ); return TK_DIF; }
 "And"      		{ yylval = Atributos( yytext ); return TK_AND; }
+"Or"      		{ yylval = Atributos( yytext ); return TK_OR; }
 
 
 {CSTRING}  		{ yylval = Atributos( troca_aspas( yytext ), Tipo( "string" ) );
@@ -67,7 +70,3 @@ char* troca_aspas( char* lexema ) {
 
   return lexema;
 }
-
-
-
-

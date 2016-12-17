@@ -121,10 +121,10 @@ string includes =
 
 %token TK_ID TK_CINT TK_CDOUBLE TK_VAR TK_PROGRAM TK_BEGIN TK_END TK_ATRIB
 %token TK_WRITELN TK_CSTRING TK_FUNCTION TK_MOD TK_IGU
-%token TK_MAIG TK_MEIG TK_DIF TK_IF TK_THEN TK_ELSE TK_AND
+%token TK_MAIG TK_MEIG TK_DIF TK_IF TK_THEN TK_ELSE TK_AND TK_OR
 %token TK_FOR TK_WHILE TK_TO TK_DO TK_ARRAY TK_OF TK_PTPT TK_IS
 
-%left TK_AND
+%left TK_AND TK_OR
 %nonassoc '<' '>' TK_MAIG TK_MEIG '=' TK_IGU TK_DIF
 %left '+' '-'
 %left '*' '/' TK_MOD
@@ -158,7 +158,7 @@ DECL : TK_VAR VARS
 
 FUNCTION : { empilha_ts(); }  CABECALHO ';' CORPO { desempilha_ts(); } ';'
            { $$.c = $2.c + " {\n" + $4.c +
-                    " return Result;\n}\n"; }
+                    "  return Result;\n}\n"; }
          ;
 
 CABECALHO : TK_FUNCTION TK_ID OPC_PARAM ':' TK_ID
@@ -289,11 +289,23 @@ MAIN : BLOCO '.'
 BLOCO : TK_BEGIN { var_temp.push_back( "" );} CMDS TK_END
         { string vars = var_temp[var_temp.size()-1];
           var_temp.pop_back();
-          $$.c = vars + $3.c; }
+          if ( $$.v == "{" ) {
+            var_temp[var_temp.size()-1] += vars;
+            $$.c = $3.c;
+          } else {
+            $$.c = vars + $3.c;
+          }
+        }
       ;
 
 CMDS : CMD ';' CMDS
        { $$.c = $1.c + $3.c; }
+     | CMD_IF CMDS
+       { $$.c = $1.c + $2.c; }
+     | CMD_FOR CMDS
+       { $$.c = $1.c + $2.c; }
+     | CMD_WHILE CMDS
+       { $$.c = $1.c + $2.c; }
      | { $$.c = ""; }
      ;
 
@@ -310,11 +322,16 @@ CMD_WHILE : TK_WHILE E CMD
             string label_inicio = gera_label( "inicio_while" );
             string label_fim = gera_label( "fim_while" );
 
-            $$.c =  label_inicio + ":\n" +
-                    "if (not (" + $2.v + ")) goto " + label_fim + ";\n" +
+
+
+            string condicao = gera_nome_var_temp ( "b" );
+            //condicao.c = label_inicio + ":;\n" + $2.c + "  " + 
+
+            $$.c =  label_inicio + ":;\n" + $2.c + condicao + " = !" + $2.v + ";\n" + 
+                    "if ( " + condicao + " ) goto " + label_fim + ";\n" + 
                     $3.c +
                     + "goto " + label_inicio + ";\n" +
-                    label_fim + ":\n";
+                    label_fim + ":;\n";
           }
         ;
 
@@ -341,11 +358,17 @@ CMD_FOR : TK_FOR NOME_VAR TK_ATRIB E TK_TO E TK_DO CMD
           }
         ;
 
-CMD_IF : TK_IF E TK_THEN CMD %prec LOWER_THAN_ELSE
-         { $$ = gera_codigo_if( $2, $4.c, "" ); }
-       | TK_IF E TK_THEN CMD TK_ELSE CMD
+CMD_IF : TK_IF E TK_THEN CMD ';' CMD_ELSE
          { $$ = gera_codigo_if( $2, $4.c, $6.c ); }
+       | TK_IF E TK_THEN BLOCO CMD_ELSE
+         { $$ = gera_codigo_if( $2, $4.c, $5.c ); }
        ;
+
+CMD_ELSE : TK_ELSE CMD
+           { $$.c = $2.c; }
+         |
+           { $$.c = ""; }
+         ;
 
 WRITELN : TK_WRITELN E
           { $$.c = $2.c +
@@ -367,7 +390,7 @@ ATRIB : TK_ID TK_ATRIB E
         }
       | TK_ID '[' E ']' TK_ATRIB E
         { // Falta testar: tipo, limite do array, e se a variável existe
-          cerr << $3.v << endl;
+          //cerr << $3.v << endl;
           Tipo tipoArray = consulta_ts( $1.v );
           $$.t = Tipo( tipoArray.tipo_base );
 
@@ -444,6 +467,8 @@ E : E '+' E
     { $$ = gera_codigo_operador( $1, "!=", $3 ); }
   | E TK_AND E
     { $$ = gera_codigo_operador( $1, "&&", $3 ); }
+  | E TK_OR E
+    { $$ = gera_codigo_operador( $1, "||", $3 ); }
   | '(' E ')'
     { $$ = $2; }
   | F
@@ -750,6 +775,15 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
   ss.t = tipo_resultado( s1.t, opr, s3.t );
   ss.v = gera_nome_var_temp( ss.t.tipo_base );
 
+  /*if ( s1.ndim == 1 && s3.ndim == 1) {
+    if ( s1.t.tipo_base == s3.t.tipo_base ) {
+      if ( s1.fim == s3.fim ) {
+        ss.v = s1.c + s3.c +
+               "  " + 
+      }
+    }
+  }*/
+
   if( s1.t.tipo_base == "s" && s3.t.tipo_base == "s" ) {
     // falta testar se é o operador "+"
     if ( opr == "+" ) {
@@ -770,9 +804,10 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
     ;
   else if( s1.t.tipo_base == "c" && s3.t.tipo_base == "s" )
     ;
-  else
+  else {
     ss.c = s1.c + s3.c + // Codigo das expressões dos filhos da arvore.
            "  " + ss.v + " = " + s1.v + " " + opr + " " + s3.v + ";\n";
+  }
 
   debug( "E: E " + opr + " E", ss );
   return ss;

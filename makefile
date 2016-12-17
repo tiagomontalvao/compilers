@@ -12,3 +12,6 @@ y.tab.c: trabalho.y
 
 trabalho: lex.yy.c y.tab.c
 	g++ -std=c++11 -o trabalho y.tab.c -lfl
+
+clean: y.tab.c trabalho lex.yy.c
+	rm y.tab.c trabalho lex.yy.c y.output
