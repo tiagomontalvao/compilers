@@ -518,15 +518,11 @@ ATRIB : TK_ID TK_ATRIB E
 
         int m = tipoArray.tam[1];
 
-        $$.c =  $3.c +
-                $6.c +
+        $$.c =  $3.c + $6.c + gera_teste_limite_array( $3.v, $6.v, tipoArray ) +
                 var1 + " = " + $3.v + " * " + to_string(m) + ";\n" +
                 var2 + " = " + var1 + " + " + $6.v + ";\n" +
                 $1.v + "[" + var2 + "] = " + $9.v + ";\n";
 
-//        $$.c = $3.c +
-  //             gera_teste_limite_array( $3.v, $6.v, tipoArray ) +
-    //           "  " + $$.v + " = " + $1.v + "[" + to_string(idx) + "];\n";
         }
       ;
 
@@ -609,8 +605,7 @@ F : TK_CINT
       string var2 = gera_nome_var_temp( $$.t.tipo_base );
       int m = tipoArray.tam[1];
 
-      $$.c =  $3.c +
-              $6.c +
+      $$.c =  $3.c + $6.c + gera_teste_limite_array( $3.v, $6.v, tipoArray ) +
               var1 + " = " + $3.v + " * " + to_string(m) + ";\n" +
               var2 + " = " + var1 + " + " + $6.v + ";\n" +
               $$.v + " = " + $1.v + "[" + var2 + "];\n";
@@ -1137,11 +1132,10 @@ string gera_teste_limite_array( string indice_1, Tipo tipoArray ) {
                                              var_teste_fim + ";\n";
 
   codigo += "  if( " + var_teste + " ) goto " + label_end + ";\n" +
-            "  printf( \"Limite de array ultrapassado: %d <= %d <= %d\", " +
-               "0 ," + indice_1 + ", " +
-               toString( tipoArray.tam[0]-1 ) + " );\n" +
-               "  cout << endl;\n" +
-               "  exit( 1 );\n" +
+            "  printf( \"Limite de array ultrapassado: 0 <= %d <= %d\", " +
+            indice_1 + ", " + toString( tipoArray.tam[0]-1 ) + " );\n" +
+            "  cout << endl;\n" +
+            "  exit( 1 );\n" +
             "  " + label_end + ":;\n";
 
   return codigo;
@@ -1149,24 +1143,36 @@ string gera_teste_limite_array( string indice_1, Tipo tipoArray ) {
 
 string gera_teste_limite_array( string indice_1, string indice_2, Tipo tipoArray ) {
   // Implementar! Perde ponto se não fizer
-  return "";
-  string var_teste_inicio = gera_nome_var_temp( "b" );
-  string var_teste_fim = gera_nome_var_temp( "b" );
+  string var_teste_inicio_1 = gera_nome_var_temp( "b" );
+  string var_teste_fim_1 = gera_nome_var_temp( "b" );
+  string var_teste_inicio_2 = gera_nome_var_temp( "b" );
+  string var_teste_fim_2 = gera_nome_var_temp( "b" );
   string var_teste = gera_nome_var_temp( "b" );
   string label_end = gera_label( "limite_array_ok" );
 
-  string codigo = "  " + var_teste_inicio + " = " + indice_1 + " >= 0;\n" +
-                  "  " + var_teste_fim + " = " + indice_1 + " <= " +
-                  toString( tipoArray.tam[0]-1 ) + ";\n" +
-                  "  " + var_teste + " = " + var_teste_inicio + " && " +
-                                             var_teste_fim + ";\n";
+  string codigo = "  " + var_teste_inicio_1 + " = " + indice_1 + " >= 0;\n" +
+                  "  " + var_teste_fim_1 + " = " + indice_1 + " < " + toString( tipoArray.tam[0] ) + ";\n" +
+                  "  " + var_teste_inicio_2 + " = " + indice_2 + " >= 0;\n" +
+                  "  " + var_teste_fim_2 + " = " + indice_2 + " < " + toString( tipoArray.tam[1] ) + ";\n" +
+                  "  " + var_teste + " = " + var_teste_inicio_1 + " && " + var_teste_fim_1 + ";\n" +
+                  "  " + var_teste + " = " + var_teste + " && " + var_teste_inicio_2 + ";\n" +
+                  "  " + var_teste + " = " + var_teste + " && " + var_teste_fim_2 + ";\n";
 
+/*
   codigo += "  if( " + var_teste + " ) goto " + label_end + ";\n" +
             "  printf( \"Limite de array ultrapassado: %d <= %d <= %d\", " +
                "0 ," + indice_1 + ", " +
                toString( tipoArray.tam[0]-1 ) + " );\n" +
                "  cout << endl;\n" +
                "  exit( 1 );\n" +
+            "  " + label_end + ":;\n";
+*/
+  codigo += "  if( " + var_teste + " ) goto " + label_end + ";\n" +
+            "  printf( \"Limite de matriz ultrapassado. Deveria ter 0 <= %d <= %d e 0 <= %d <= %d \", " +
+            indice_1 + ", " + toString( tipoArray.tam[0]-1 ) + ", " +
+            indice_2 + ", " + toString( tipoArray.tam[1]-1 ) + " );\n" +
+            "  cout << endl;\n" +
+            "  exit( 1 );\n" +
             "  " + label_end + ":;\n";
 
   return codigo;
