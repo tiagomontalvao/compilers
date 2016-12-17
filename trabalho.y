@@ -303,6 +303,7 @@ CMD : WRITELN
     | BLOCO
     | CMD_FOR
     | CMD_WHILE
+    | CMD_DO_WHILE
     ;
 
 CMD_WHILE : TK_WHILE E CMD
@@ -315,6 +316,16 @@ CMD_WHILE : TK_WHILE E CMD
                     $3.c +
                     + "goto " + label_inicio + ";\n" +
                     label_fim + ":\n";
+          }
+        ;
+
+CMD_DO_WHILE : TK_DO CMD TK_WHILE E
+          {
+            string label_inicio = gera_label( "inicio_while" );
+
+            $$.c =  label_inicio + ":\n" +
+                    $2.c +
+                    "if (" + $2.v + ") goto " + label_inicio + ";\n";
           }
         ;
 
