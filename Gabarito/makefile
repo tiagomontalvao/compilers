@@ -8,4 +8,4 @@ y.tab.c: trabalho.y
 	yacc trabalho.y
 
 trabalho: lex.yy.c y.tab.c
-	g++ -o gabarito y.tab.c -lfl
+	g++ -o gabarito y.tab.c -lfl -D_GLIBCXX_USE_CXX11_ABI=0
