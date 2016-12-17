@@ -23,6 +23,10 @@ Suíço;
 
 Príncipe
 
+	matriz[2][5] recebe 10;
+	Como printa, deputado? matriz[2][5];
+	
+
 	v2[0] recebe 1.0;
 
 	Como printa, deputado? 5 foi citado em v1;
