@@ -140,8 +140,19 @@ S : PROGRAM DECLS MAIN
       cout << $3.c << endl;
     }
   ;
+<<<<<<< HEAD
+  
 PROGRAM : TK_PROGRAM '.'
+          { $$.c = ""; 
+||||||| merged common ancestors
+  
+PROGRAM : TK_PROGRAM TK_ID ';' 
+          { $$.c = ""; 
+=======
+
+PROGRAM : TK_PROGRAM TK_ID ';'
           { $$.c = "";
+>>>>>>> 43495a3c1b7f67eb2d463558525de490cec142b1
             empilha_ts(); }
         ;
 
@@ -230,15 +241,39 @@ CORPO : TK_VAR VARS BLOCO
       | BLOCO
         { $$.c = declara_variavel( "Result", consulta_ts( "Result" ) ) + ";\n" +
                  $1.c; }
-      ;
+<<<<<<< HEAD
+      ;    
 
 VARS : TK_CINT '.' VAR ';' VARS
        { $$.c = $3.c + $5.c; }
+     | 
+||||||| merged common ancestors
+      ;    
+     
+VARS : VAR ';' VARS
+       { $$.c = $1.c + $3.c; }
+     | 
+=======
+      ;
+
+VARS : VAR ';' VARS
+       { $$.c = $1.c + $3.c; }
      |
+>>>>>>> 43495a3c1b7f67eb2d463558525de490cec142b1
        { $$ = Atributos(); }
+<<<<<<< HEAD
+     ;     
+     
+VAR : IDS TK_IS TK_ID 
+||||||| merged common ancestors
+     ;     
+     
+VAR : IDS ':' TK_ID 
+=======
      ;
 
-VAR : IDS TK_IS TK_ID
+VAR : IDS ':' TK_ID
+>>>>>>> 43495a3c1b7f67eb2d463558525de490cec142b1
       {
         Tipo tipo = Tipo( traduz_nome_tipo_pascal( $3.v ) );
 
@@ -249,10 +284,28 @@ VAR : IDS TK_IS TK_ID
           insere_var_ts( $1.lista_str[i], tipo );
         }
       }
-    | IDS TK_IS TK_ARRAY TK_OF '[' TK_CINT ']' TK_ID
+<<<<<<< HEAD
+//    | IDS TK_IS TK_ARRAY '[' TK_CINT TK_PTPT TK_CINT ']' TK_OF TK_ID 
+    | IDS TK_IS TK_ARRAY TK_OF '[' TK_CINT ']' TK_ID 
+||||||| merged common ancestors
+    | IDS ':' TK_ARRAY '[' TK_CINT TK_PTPT TK_CINT ']' TK_OF TK_ID 
+=======
+    | IDS ':' TK_ARRAY '[' TK_CINT TK_PTPT TK_CINT ']' TK_OF TK_ID
+>>>>>>> 43495a3c1b7f67eb2d463558525de490cec142b1
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_pascal( $8.v ),
+<<<<<<< HEAD
+        Tipo tipo = Tipo( traduz_nome_tipo_pascal( $8.v ), 
                           0, toInt( $6.v ) - 1);
+        
+||||||| merged common ancestors
+        Tipo tipo = Tipo( traduz_nome_tipo_pascal( $10.v ), 
+                          toInt( $5.v ), toInt( $7.v ) );
+        
+=======
+        Tipo tipo = Tipo( traduz_nome_tipo_pascal( $10.v ),
+                          toInt( $5.v ), toInt( $7.v ) );
+
+>>>>>>> 43495a3c1b7f67eb2d463558525de490cec142b1
         $$ = Atributos();
 
         for( int i = 0; i < $1.lista_str.size(); i ++ ) {
@@ -260,7 +313,13 @@ VAR : IDS TK_IS TK_ID
           insere_var_ts( $1.lista_str[i], tipo );
         }
       }
-    | IDS TK_IS TK_ARRAY '[' TK_CINT TK_PTPT TK_CINT ']' '[' TK_CINT TK_PTPT TK_CINT ']' TK_OF TK_ID
+<<<<<<< HEAD
+    | IDS TK_IS TK_ARRAY '[' TK_CINT TK_PTPT TK_CINT ']' '[' TK_CINT TK_PTPT TK_CINT ']' TK_OF TK_ID 
+||||||| merged common ancestors
+    | IDS ':' TK_ARRAY '[' TK_CINT TK_PTPT TK_CINT ']' '[' TK_CINT TK_PTPT TK_CINT ']' TK_OF TK_ID 
+=======
+    | IDS ':' TK_ARRAY '[' TK_CINT TK_PTPT TK_CINT ']' '[' TK_CINT TK_PTPT TK_CINT ']' TK_OF TK_ID
+>>>>>>> 43495a3c1b7f67eb2d463558525de490cec142b1
       {
         Tipo tipo = Tipo( traduz_nome_tipo_pascal( $15.v ),
                           toInt( $5.v ), toInt( $7.v ), toInt( $10.v ), toInt( $12.v ) );
@@ -332,9 +391,20 @@ CMD_IF : TK_IF E TK_THEN CMD %prec LOWER_THAN_ELSE
          { $$ = gera_codigo_if( $2, $4.c, $6.c ); }
        ;
 
-WRITELN : TK_WRITELN E
-          { $$.c = $2.c +
+<<<<<<< HEAD
+WRITELN : TK_WRITELN E 
+          { $$.c = $2.c + 
                    "  cout << " + $2.v + ";\n"
+||||||| merged common ancestors
+WRITELN : TK_WRITELN '(' E ')' 
+          { $$.c = $3.c + 
+                   "  cout << " + $3.v + ";\n"
+=======
+
+WRITELN : TK_WRITELN '(' E ')'
+          { $$.c = $3.c +
+                   "  cout << " + $3.v + ";\n"
+>>>>>>> 43495a3c1b7f67eb2d463558525de490cec142b1
                    "  cout << endl;\n";
           }
         ;
@@ -352,8 +422,18 @@ ATRIB : TK_ID TK_ATRIB E
         }
       | TK_ID '[' E ']' TK_ATRIB E
         { // Falta testar: tipo, limite do array, e se a variável existe
+<<<<<<< HEAD
+
           cerr << $3.v << endl;
           Tipo tipoArray = consulta_ts( $1.v );
+
+
+
+||||||| merged common ancestors
+          cerr << $3.c << ' ' << $6.c << endl; 
+=======
+          cerr << $3.c << ' ' << $6.c << endl;
+>>>>>>> 43495a3c1b7f67eb2d463558525de490cec142b1
           $$.c = $3.c + $6.c +
                  "  " + $1.v + "[" + $3.v + "] = " + $6.v + ";\n";
         }
@@ -664,15 +744,35 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
 
   ss.t = tipo_resultado( s1.t, opr, s3.t );
   ss.v = gera_nome_var_temp( ss.t.tipo_base );
-
+<<<<<<< HEAD
+  
   if( s1.t.tipo_base == "s" && s3.t.tipo_base == "s" ) {
+||||||| merged common ancestors
+  
+  if( s1.t.tipo_base == "s" && s3.t.tipo_base == "s" ) 
+=======
+
+  if( s1.t.tipo_base == "s" && s3.t.tipo_base == "s" )
+>>>>>>> 43495a3c1b7f67eb2d463558525de490cec142b1
     // falta testar se é o operador "+"
+<<<<<<< HEAD
     if ( opr == "+" ) {
       ss.c = s1.c + s3.c + // Codigo das expressões dos filhos da arvore.
              "  strncpy( " + ss.v + ", " + s1.v + ", 256 );\n" +
              "  strncat( " + ss.v + ", " + s3.v + ", 256 );\n";
     }
-  } else if( s1.t.tipo_base == "s" && s3.t.tipo_base == "c" )
+  } else if( s1.t.tipo_base == "s" && s3.t.tipo_base == "c" ) 
+||||||| merged common ancestors
+    ss.c = s1.c + s3.c + // Codigo das expressões dos filhos da arvore.
+           "  strncpy( " + ss.v + ", " + s1.v + ", 256 );\n" +
+           "  strncat( " + ss.v + ", " + s3.v + ", 256 );\n";
+  else if( s1.t.tipo_base == "s" && s3.t.tipo_base == "c" ) 
+=======
+    ss.c = s1.c + s3.c + // Codigo das expressões dos filhos da arvore.
+           "  strncpy( " + ss.v + ", " + s1.v + ", 256 );\n" +
+           "  strncat( " + ss.v + ", " + s3.v + ", 256 );\n";
+  else if( s1.t.tipo_base == "s" && s3.t.tipo_base == "c" )
+>>>>>>> 43495a3c1b7f67eb2d463558525de490cec142b1
     ;
   else if( s1.t.tipo_base == "c" && s3.t.tipo_base == "s" )
     ;

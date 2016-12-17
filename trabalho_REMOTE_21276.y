@@ -122,7 +122,7 @@ string includes =
 %token TK_ID TK_CINT TK_CDOUBLE TK_VAR TK_PROGRAM TK_BEGIN TK_END TK_ATRIB
 %token TK_WRITELN TK_CSTRING TK_FUNCTION TK_MOD
 %token TK_MAIG TK_MEIG TK_DIF TK_IF TK_THEN TK_ELSE TK_AND
-%token TK_FOR TK_TO TK_DO TK_ARRAY TK_OF TK_PTPT TK_IS
+%token TK_FOR TK_TO TK_DO TK_ARRAY TK_OF TK_PTPT
 
 %left TK_AND
 %nonassoc '<' '>' TK_MAIG TK_MEIG '=' TK_DIF
@@ -140,7 +140,8 @@ S : PROGRAM DECLS MAIN
       cout << $3.c << endl;
     }
   ;
-PROGRAM : TK_PROGRAM '.'
+
+PROGRAM : TK_PROGRAM TK_ID ';'
           { $$.c = "";
             empilha_ts(); }
         ;
@@ -232,13 +233,13 @@ CORPO : TK_VAR VARS BLOCO
                  $1.c; }
       ;
 
-VARS : TK_CINT '.' VAR ';' VARS
-       { $$.c = $3.c + $5.c; }
+VARS : VAR ';' VARS
+       { $$.c = $1.c + $3.c; }
      |
        { $$ = Atributos(); }
      ;
 
-VAR : IDS TK_IS TK_ID
+VAR : IDS ':' TK_ID
       {
         Tipo tipo = Tipo( traduz_nome_tipo_pascal( $3.v ) );
 
@@ -249,10 +250,11 @@ VAR : IDS TK_IS TK_ID
           insere_var_ts( $1.lista_str[i], tipo );
         }
       }
-    | IDS TK_IS TK_ARRAY TK_OF '[' TK_CINT ']' TK_ID
+    | IDS ':' TK_ARRAY '[' TK_CINT TK_PTPT TK_CINT ']' TK_OF TK_ID
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_pascal( $8.v ),
-                          0, toInt( $6.v ) - 1);
+        Tipo tipo = Tipo( traduz_nome_tipo_pascal( $10.v ),
+                          toInt( $5.v ), toInt( $7.v ) );
+
         $$ = Atributos();
 
         for( int i = 0; i < $1.lista_str.size(); i ++ ) {
@@ -260,7 +262,7 @@ VAR : IDS TK_IS TK_ID
           insere_var_ts( $1.lista_str[i], tipo );
         }
       }
-    | IDS TK_IS TK_ARRAY '[' TK_CINT TK_PTPT TK_CINT ']' '[' TK_CINT TK_PTPT TK_CINT ']' TK_OF TK_ID
+    | IDS ':' TK_ARRAY '[' TK_CINT TK_PTPT TK_CINT ']' '[' TK_CINT TK_PTPT TK_CINT ']' TK_OF TK_ID
       {
         Tipo tipo = Tipo( traduz_nome_tipo_pascal( $15.v ),
                           toInt( $5.v ), toInt( $7.v ), toInt( $10.v ), toInt( $12.v ) );
@@ -332,9 +334,10 @@ CMD_IF : TK_IF E TK_THEN CMD %prec LOWER_THAN_ELSE
          { $$ = gera_codigo_if( $2, $4.c, $6.c ); }
        ;
 
-WRITELN : TK_WRITELN E
-          { $$.c = $2.c +
-                   "  cout << " + $2.v + ";\n"
+
+WRITELN : TK_WRITELN '(' E ')'
+          { $$.c = $3.c +
+                   "  cout << " + $3.v + ";\n"
                    "  cout << endl;\n";
           }
         ;
@@ -352,8 +355,7 @@ ATRIB : TK_ID TK_ATRIB E
         }
       | TK_ID '[' E ']' TK_ATRIB E
         { // Falta testar: tipo, limite do array, e se a variável existe
-          cerr << $3.v << endl;
-          Tipo tipoArray = consulta_ts( $1.v );
+          cerr << $3.c << ' ' << $6.c << endl;
           $$.c = $3.c + $6.c +
                  "  " + $1.v + "[" + $3.v + "] = " + $6.v + ";\n";
         }
@@ -665,14 +667,12 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
   ss.t = tipo_resultado( s1.t, opr, s3.t );
   ss.v = gera_nome_var_temp( ss.t.tipo_base );
 
-  if( s1.t.tipo_base == "s" && s3.t.tipo_base == "s" ) {
+  if( s1.t.tipo_base == "s" && s3.t.tipo_base == "s" )
     // falta testar se é o operador "+"
-    if ( opr == "+" ) {
-      ss.c = s1.c + s3.c + // Codigo das expressões dos filhos da arvore.
-             "  strncpy( " + ss.v + ", " + s1.v + ", 256 );\n" +
-             "  strncat( " + ss.v + ", " + s3.v + ", 256 );\n";
-    }
-  } else if( s1.t.tipo_base == "s" && s3.t.tipo_base == "c" )
+    ss.c = s1.c + s3.c + // Codigo das expressões dos filhos da arvore.
+           "  strncpy( " + ss.v + ", " + s1.v + ", 256 );\n" +
+           "  strncat( " + ss.v + ", " + s3.v + ", 256 );\n";
+  else if( s1.t.tipo_base == "s" && s3.t.tipo_base == "c" )
     ;
   else if( s1.t.tipo_base == "c" && s3.t.tipo_base == "s" )
     ;
@@ -807,7 +807,6 @@ string gera_teste_limite_array( string indice_1, Tipo tipoArray ) {
 }
 
 string gera_teste_limite_array( string indice_1, string indice_2, Tipo tipoArray ) {
-  // Implementar! Perde ponto se não fizer
   return "";
   string var_teste_inicio = gera_nome_var_temp( "b" );
   string var_teste_fim = gera_nome_var_temp( "b" );
