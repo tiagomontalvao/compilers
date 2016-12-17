@@ -68,6 +68,11 @@ struct Atributos {
   Tipo t;
   vector<string> lista_str; // Uma lista auxiliar de strings.
   vector<Tipo> lista_tipo; // Uma lista auxiliar de tipos.
+  vector<string> switch_labels; // Usado no switch-case.
+  vector<string> switch_code; // Usado no switch-case.
+  vector<int> tem_break; // Usado no switch-case.
+  string default_label; // Usado no switch-case.
+  string default_code; // Usado no switch-case.
 
   Atributos() {} // Constutor vazio
   Atributos( string valor ) {
@@ -122,7 +127,7 @@ string includes =
 %token TK_ID TK_CINT TK_CDOUBLE TK_VAR TK_PROGRAM TK_BEGIN TK_END TK_ATRIB
 %token TK_WRITELN TK_READ TK_CSTRING TK_FUNCTION TK_MOD TK_IGU
 %token TK_MAIG TK_MEIG TK_DIF TK_IF TK_THEN TK_ELSE TK_AND TK_OR
-%token TK_FOR TK_WHILE TK_TO TK_DO TK_ARRAY TK_OF TK_PTPT TK_IS
+%token TK_FOR TK_WHILE TK_SWITCH TK_CASE TK_DEFAULT TK_BREAK TK_TO TK_DO TK_ARRAY TK_OF TK_PTPT TK_IS
 
 %left TK_AND TK_OR
 %nonassoc '<' '>' TK_MAIG TK_MEIG '=' TK_IGU TK_DIF
@@ -317,7 +322,71 @@ CMD : WRITELN
     | CMD_FOR
     | CMD_WHILE
     | CMD_DO_WHILE
+    | CMD_SWITCH
     ;
+
+CMD_SWITCH  : TK_SWITCH '(' TK_ID ')' SWITCH_BLOCO
+            {
+              $$.c = "";
+              string fim_label = gera_label("fim_switch");
+
+              // Gerando as variáveis para comparação.
+              for (int i = $5.lista_str.size() - 1; i >= 0; i--) {
+                  string var = gera_nome_var_temp( "b" );
+                  $$.c += var + " = " + $3.v + " == " + $$.lista_str[i] + ";\n";
+                  $$.c += "if (" + var + ") goto " + $$.switch_labels[i] + ";\n";
+              }
+              $$.c += "\n";
+
+              // Se houver default.
+              if ($5.default_label != "") {
+                $$.c += "goto " + $5.default_label + ";\n\n";
+              }
+
+              // Para cada case.
+              for (int i = $5.lista_str.size() - 1; i >= 0; i--) {
+                $$.c += $5.switch_labels[i] + ":\n";
+                $$.c += $5.switch_code[i] + "\n";
+                if ($5.tem_break[i]) $$.c += "goto " + fim_label + ";\n";
+              }
+
+              // Se houver default.
+              if ($5.default_label != "") {
+                $$.c += $5.default_label + ":\n";
+                $$.c += $5.default_code + "\n";
+              }
+
+              // Marcador final.
+              $$.c += fim_label + ":\n";
+            }
+
+SWITCH_BLOCO  : TK_CASE F ':' CMDS SWITCH_BLOCO
+              {
+                $$ = $5;
+                $$.lista_str.push_back($2.v);
+                $$.switch_labels.push_back(gera_label("case_switch"));
+                $$.switch_code.push_back($4.c);
+                $$.tem_break.push_back(0);
+                $$.default_label = $5.default_label;
+                $$.default_code = $5.default_code;
+              }
+              | TK_CASE F ':' CMDS TK_BREAK ';' SWITCH_BLOCO
+              {
+                $$ = $7;
+                $$.lista_str.push_back($2.v);
+                $$.switch_labels.push_back(gera_label("case_switch"));
+                $$.switch_code.push_back($4.c);
+                $$.tem_break.push_back(1);
+                $$.default_label = $7.default_label;
+                $$.default_code = $7.default_code;
+              }
+              | TK_DEFAULT ':' CMDS
+              {
+                $$ = Atributos();
+                $$.default_label = gera_label("default_switch");
+                $$.default_code = $3.c;
+              }
+              |
 
 LEIA :  TK_READ IDS
         {
@@ -331,13 +400,11 @@ CMD_WHILE : TK_WHILE E CMD
             string label_inicio = gera_label( "inicio_while" );
             string label_fim = gera_label( "fim_while" );
 
-
-
             string condicao = gera_nome_var_temp ( "b" );
-            //condicao.c = label_inicio + ":;\n" + $2.c + "  " + 
+            //condicao.c = label_inicio + ":;\n" + $2.c + "  " +
 
-            $$.c =  label_inicio + ":;\n" + $2.c + condicao + " = !" + $2.v + ";\n" + 
-                    "if ( " + condicao + " ) goto " + label_fim + ";\n" + 
+            $$.c =  label_inicio + ":;\n" + $2.c + condicao + " = !" + $2.v + ";\n" +
+                    "if ( " + condicao + " ) goto " + label_fim + ";\n" +
                     $3.c +
                     + "goto " + label_inicio + ";\n" +
                     label_fim + ":;\n";
@@ -798,7 +865,7 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
     if ( s1.t.tipo_base == s3.t.tipo_base ) {
       if ( s1.fim == s3.fim ) {
         ss.v = s1.c + s3.c +
-               "  " + 
+               "  " +
       }
     }
   }*/
