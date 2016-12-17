@@ -520,7 +520,7 @@ ATRIB : TK_ID TK_ATRIB E
         $$.c =  $3.c +
                 $6.c +
                 var1 + " = " + $3.v + " * " + to_string(m) + ";\n" +
-                var2 + " = " + var1 + " + " + $6.v + ";\n";
+                var2 + " = " + var1 + " + " + $6.v + ";\n" +
                 $1.v + "[" + var2 + "] = " + $9.v + ";\n";
 
 //        $$.c = $3.c +
