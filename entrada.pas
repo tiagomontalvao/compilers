@@ -1,9 +1,16 @@
-Program HelloWorld;
+Que Deus tenha misericórdia desta nação.
 
-Var
-  b: Array [0 .. 2] [0 .. 4] Of Integer;
+Depoimentos
+  1. a é Integer;
+  2. str1 é String;
+  3. str2 é String;
+  4. vetor é Coligação de [10] Integer;
 
-Begin
-  b[2][4] := 3;
-  WriteLn( b[2][4] );
-End.	
+Príncipe
+  vetor[9] recebe 6;
+  str1 recebe 'como vota';
+  str2 recebe 'deputado?';
+  Como printa, deputado? vetor[9] + 1;
+  Como printa, deputado? str1 + ' ' + str2;
+  Como printa, deputado? 3 < 3;
+Suíco.	
