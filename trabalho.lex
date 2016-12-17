@@ -27,6 +27,7 @@ COMMENT "(*"([^*]|"*"[^)])*"*)"
 "Príncipe"   	{ yylval = Atributos( yytext ); return TK_BEGIN; }
 "Suíco"      	{ yylval = Atributos( yytext ); return TK_END; }
 "Como printa, deputado?"  { yylval = Atributos( yytext ); return TK_WRITELN; }
+"Leia" 			{ yylval = Atributos( yytext ); return TK_READ; }
 "If"       		{ yylval = Atributos( yytext ); return TK_IF; }
 "Then"     		{ yylval = Atributos( yytext ); return TK_THEN; }
 "Else"     		{ yylval = Atributos( yytext ); return TK_ELSE; }
