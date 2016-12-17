@@ -122,7 +122,7 @@ string includes =
 %token TK_ID TK_CINT TK_CDOUBLE TK_VAR TK_PROGRAM TK_BEGIN TK_END TK_ATRIB
 %token TK_WRITELN TK_CSTRING TK_FUNCTION TK_MOD TK_IGU
 %token TK_MAIG TK_MEIG TK_DIF TK_IF TK_THEN TK_ELSE TK_AND
-%token TK_FOR TK_TO TK_DO TK_ARRAY TK_OF TK_PTPT TK_IS
+%token TK_FOR TK_WHILE TK_TO TK_DO TK_ARRAY TK_OF TK_PTPT TK_IS
 
 %left TK_AND
 %nonassoc '<' '>' TK_MAIG TK_MEIG '=' TK_IGU TK_DIF
@@ -302,7 +302,22 @@ CMD : WRITELN
     | CMD_IF
     | BLOCO
     | CMD_FOR
+    | CMD_WHILE
     ;
+
+CMD_WHILE : TK_WHILE E CMD
+          {
+            string label_inicio = gera_label( "inicio_while" );
+            string label_fim = gera_label( "fim_while" );
+
+            $$.c =  label_inicio + ":\n" +
+                    "if (not (" + $2.v + ")) goto " + label_fim + ";\n" +
+                    $3.c +
+                    + "goto " + label_inicio + ";\n" +
+                    label_fim + ":\n";
+          }
+        ;
+
 
 CMD_FOR : TK_FOR NOME_VAR TK_ATRIB E TK_TO E TK_DO CMD
           {
@@ -748,7 +763,7 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
       temp.v = gera_nome_var_temp( temp.t.tipo_base );
       temp.c = s1.c + s3.c +
              "  " + temp.v + " = " + "strcmp( " + s1.v + ", " + s3.v + " );\n";
-      ss.c = temp.c + 
+      ss.c = temp.c +
              "  " + ss.v + " = " + temp.v + " " + opr + " 0;\n";
     }
   } else if( s1.t.tipo_base == "s" && s3.t.tipo_base == "c" )

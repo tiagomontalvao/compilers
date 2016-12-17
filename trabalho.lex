@@ -31,6 +31,7 @@ COMMENT "(*"([^*]|"*"[^)])*"*)"
 "Then"     		{ yylval = Atributos( yytext ); return TK_THEN; }
 "Else"     		{ yylval = Atributos( yytext ); return TK_ELSE; }
 "For"      		{ yylval = Atributos( yytext ); return TK_FOR; }
+"While"      		{ yylval = Atributos( yytext ); return TK_WHILE; }
 "To"       		{ yylval = Atributos( yytext ); return TK_TO; }
 "Do"       		{ yylval = Atributos( yytext ); return TK_DO; }
 "Coligação"    	{ yylval = Atributos( yytext ); return TK_ARRAY; }
@@ -49,7 +50,7 @@ COMMENT "(*"([^*]|"*"[^)])*"*)"
 "And"      		{ yylval = Atributos( yytext ); return TK_AND; }
 
 
-{CSTRING}  		{ yylval = Atributos( troca_aspas( yytext ), Tipo( "string" ) ); 
+{CSTRING}  		{ yylval = Atributos( troca_aspas( yytext ), Tipo( "string" ) );
              			return TK_CSTRING; }
 {ID}       		{ yylval = Atributos( yytext ); return TK_ID; }
 {INT}      		{ yylval = Atributos( yytext, Tipo( "int" ) ); return TK_CINT; }
@@ -63,10 +64,10 @@ char* troca_aspas( char* lexema ) {
   int n = strlen( lexema );
   lexema[0] = '"';
   lexema[n-1] = '"';
-  
+
   return lexema;
 }
 
- 
+
 
 
