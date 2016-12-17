@@ -44,7 +44,8 @@ COMMENT "(*"([^*]|"*"[^)])*"*)"
 "recebe"   		{ yylval = Atributos( yytext ); return TK_ATRIB; }
 "<="       		{ yylval = Atributos( yytext ); return TK_MEIG; }
 ">="       		{ yylval = Atributos( yytext ); return TK_MAIG; }
-"<>"       		{ yylval = Atributos( yytext ); return TK_DIF; }
+"=="       		{ yylval = Atributos( yytext ); return TK_IGU; }
+"!="       		{ yylval = Atributos( yytext ); return TK_DIF; }
 "And"      		{ yylval = Atributos( yytext ); return TK_AND; }
 
 

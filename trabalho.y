@@ -120,12 +120,12 @@ string includes =
 %}
 
 %token TK_ID TK_CINT TK_CDOUBLE TK_VAR TK_PROGRAM TK_BEGIN TK_END TK_ATRIB
-%token TK_WRITELN TK_CSTRING TK_FUNCTION TK_MOD
+%token TK_WRITELN TK_CSTRING TK_FUNCTION TK_MOD TK_IGU
 %token TK_MAIG TK_MEIG TK_DIF TK_IF TK_THEN TK_ELSE TK_AND
 %token TK_FOR TK_TO TK_DO TK_ARRAY TK_OF TK_PTPT TK_IS
 
 %left TK_AND
-%nonassoc '<' '>' TK_MAIG TK_MEIG '=' TK_DIF
+%nonassoc '<' '>' TK_MAIG TK_MEIG '=' TK_IGU TK_DIF
 %left '+' '-'
 %left '*' '/' TK_MOD
 %nonassoc LOWER_THAN_ELSE
@@ -423,7 +423,7 @@ E : E '+' E
     { $$ = gera_codigo_operador( $1, "<=", $3 ); }
   | E TK_MAIG E
     { $$ = gera_codigo_operador( $1, ">=", $3 ); }
-  | E '=' E
+  | E TK_IGU E
     { $$ = gera_codigo_operador( $1, "==", $3 ); }
   | E TK_DIF E
     { $$ = gera_codigo_operador( $1, "!=", $3 ); }
@@ -583,18 +583,64 @@ void inicializa_operadores() {
   tipo_opr["c<c"] = "b";
   tipo_opr["i<c"] = "b";
   tipo_opr["c<i"] = "b";
-//  tipo_opr["c<s"] = "b";
-//  tipo_opr["s<c"] = "b";
-//  tipo_opr["s<s"] = "b";
+  tipo_opr["c<s"] = "b";
+  tipo_opr["s<c"] = "b";
+  tipo_opr["s<s"] = "b";
+
+  // Resultados para o operador ">"
+  tipo_opr["i>i"] = "b";
+  tipo_opr["i>d"] = "b";
+  tipo_opr["d>i"] = "b";
+  tipo_opr["d>d"] = "b";
+  tipo_opr["c>c"] = "b";
+  tipo_opr["i>c"] = "b";
+  tipo_opr["c>i"] = "b";
+  tipo_opr["c>s"] = "b";
+  tipo_opr["s>c"] = "b";
+  tipo_opr["s>s"] = "b";
+
+  // Resultados para o operador "<="
+  tipo_opr["i<=i"] = "b";
+  tipo_opr["i<=d"] = "b";
+  tipo_opr["d<=i"] = "b";
+  tipo_opr["d<=d"] = "b";
+  tipo_opr["c<=c"] = "b";
+  tipo_opr["i<=c"] = "b";
+  tipo_opr["c<=i"] = "b";
+  tipo_opr["c<=s"] = "b";
+  tipo_opr["s<=c"] = "b";
+  tipo_opr["s<=s"] = "b";
+
+  // Resultados para o operador ">="
+  tipo_opr["i>=i"] = "b";
+  tipo_opr["i>=d"] = "b";
+  tipo_opr["d>=i"] = "b";
+  tipo_opr["d>=d"] = "b";
+  tipo_opr["c>=c"] = "b";
+  tipo_opr["i>=c"] = "b";
+  tipo_opr["c>=i"] = "b";
+  tipo_opr["c>=s"] = "b";
+  tipo_opr["s>=c"] = "b";
+  tipo_opr["s>=s"] = "b";
 
   // Resultados para o operador "And"
   tipo_opr["b&&b"] = "b";
 
-  // Resultados para o operador "="
+  // Resultados para o operador "=="
   tipo_opr["i==i"] = "b";
   tipo_opr["i==d"] = "b";
   tipo_opr["d==i"] = "b";
   tipo_opr["d==d"] = "b";
+  tipo_opr["c==c"] = "b";
+  tipo_opr["s==s"] = "b";
+
+  // Resultados para o operador "!="
+  tipo_opr["i!=i"] = "b";
+  tipo_opr["i!=d"] = "b";
+  tipo_opr["d!=i"] = "b";
+  tipo_opr["d!=d"] = "b";
+  tipo_opr["c!=c"] = "b";
+  tipo_opr["s!=s"] = "b";
 }
 
 // Uma tabela de símbolos para cada escopo
@@ -683,6 +729,7 @@ Tipo tipo_resultado( Tipo t1, string opr, Tipo t3 ) {
 }
 
 Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
+
   Atributos ss;
 
   ss.t = tipo_resultado( s1.t, opr, s3.t );
@@ -694,6 +741,15 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
       ss.c = s1.c + s3.c + // Codigo das expressões dos filhos da arvore.
              "  strncpy( " + ss.v + ", " + s1.v + ", 256 );\n" +
              "  strncat( " + ss.v + ", " + s3.v + ", 256 );\n";
+    }
+    if (opr == "<" || opr == ">" || opr == "<=" || opr == ">=" || opr == "==" || opr == "!=" ) {
+      Atributos temp;
+      temp.t = Tipo( "i" );
+      temp.v = gera_nome_var_temp( temp.t.tipo_base );
+      temp.c = s1.c + s3.c +
+             "  " + temp.v + " = " + "strcmp( " + s1.v + ", " + s3.v + " );\n";
+      ss.c = temp.c + 
+             "  " + ss.v + " = " + temp.v + " " + opr + " 0;\n";
     }
   } else if( s1.t.tipo_base == "s" && s3.t.tipo_base == "c" )
     ;
