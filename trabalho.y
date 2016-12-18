@@ -469,7 +469,8 @@ CMD_DO_WHILE : TK_DO CMD TK_WHILE E
 
             $$.c =  label_inicio + ":\n" +
                     $2.c +
-                    "if (" + $2.v + ") goto " + label_inicio + ";\n";
+                    $4.c +
+                    "if (" + $4.v + ") goto " + label_inicio + ";\n";
           }
         ;
 
