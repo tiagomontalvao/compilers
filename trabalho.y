@@ -121,7 +121,7 @@ string includes =
 %}
 
 %token TK_ID TK_CINT TK_CDOUBLE TK_VAR TK_PROGRAM TK_BEGIN TK_END TK_ATRIB
-%token TK_WRITELN TK_READ TK_CSTRING TK_FUNCTION
+%token TK_WRITELN TK_READ TK_CSTRING TK_FUNCTION TK_WATCH
 %token TK_MOD TK_IGU TK_MENORQ TK_MAIORQ TK_MAIG TK_MEIG TK_DIF TK_IF TK_THEN TK_ELSE TK_AND TK_OR TK_NOT TK_IN TK_ABREP TK_FECHAP TK_MAIS TK_MENOS TK_MULT TK_DIV TK_REST
 %token TK_FOR TK_WHILE TK_SWITCH TK_CASE TK_DEFAULT TK_BREAK TK_TO TK_DO TK_ARRAY TK_OF TK_PTPT TK_IS
 
@@ -318,8 +318,20 @@ CMD : WRITELN
     | CMD_FOR
     | CMD_WHILE
     | CMD_DO_WHILE
+    | CMD_WATCH
     | CMD_SWITCH
     ;
+
+CMD_WATCH   : TK_WATCH TK_ID
+            {
+              $$ = Atributos();
+              $$.c = "cout << \"";
+              $$.c += $2.v;
+              $$.c += "\";\n";
+              $$.c += "cout << \" vale \";\n";
+              $$.c += "cout << " + $2.v + ";\n";
+              $$.c += "cout << endl;\n";
+            }
 
 CMD_SWITCH  : TK_SWITCH '(' TK_ID ')' SWITCH_BLOCO
             {
