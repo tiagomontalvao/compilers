@@ -105,7 +105,7 @@ string toString( int n );
 Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 );
 Atributos gera_codigo_if( Atributos expr, string cmd_then, string cmd_else );
 
-string traduz_nome_tipo_pascal( string tipo_pascal );
+string traduz_nome_tipo_lula( string tipo_pascal );
 
 string includes =
 "#include <iostream>\n"
@@ -162,7 +162,7 @@ FUNCTION : { empilha_ts(); }  CABECALHO ';' CORPO { desempilha_ts(); } ';'
 
 CABECALHO : TK_FUNCTION TK_ID OPC_PARAM ':' TK_ID
             {
-              Tipo tipo( traduz_nome_tipo_pascal( $5.v ) );
+              Tipo tipo( traduz_nome_tipo_lula( $5.v ) );
 
               $$.c = declara_funcao( $2.v, tipo, $3.lista_str, $3.lista_tipo );
             }
@@ -191,7 +191,7 @@ PARAMS : PARAM ';' PARAMS
 
 PARAM : IDS ':' TK_ID
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_pascal( $3.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $3.v ) );
 
         $$ = Atributos();
         $$.lista_str = $1.lista_str;
@@ -199,10 +199,10 @@ PARAM : IDS ':' TK_ID
         for( int i = 0; i < $1.lista_str.size(); i ++ )
           $$.lista_tipo.push_back( tipo );
       }
-    | IDS ':' TK_ARRAY '[' TK_CINT TK_PTPT TK_CINT ']' TK_OF TK_ID
+    | IDS ':' TK_ARRAY TK_OF '[' TK_CINT ']'  TK_ID
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_pascal( $10.v ),
-                          toInt( $5.v ), toInt( $7.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $8.v ),
+                          toInt( $6.v ) );
 
         $$ = Atributos();
         $$.lista_str = $1.lista_str;
@@ -210,11 +210,10 @@ PARAM : IDS ':' TK_ID
         for( int i = 0; i < $1.lista_str.size(); i ++ )
           $$.lista_tipo.push_back( tipo );
       }
-    | IDS ':' TK_ARRAY '[' TK_CINT TK_PTPT TK_CINT ']' '[' TK_CINT TK_PTPT TK_CINT ']' TK_OF TK_ID
+    | IDS ':' TK_ARRAY TK_OF '[' TK_CINT ']' '[' TK_CINT ']' TK_ID
       {
-        // Refactor
-        Tipo tipo = Tipo( traduz_nome_tipo_pascal( $15.v ),
-                          toInt( $7.v ), toInt( $12.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $11.v ),
+                          toInt( $6.v ), toInt( $9.v ) );
 
         $$ = Atributos();
         $$.lista_str = $1.lista_str;
@@ -240,7 +239,7 @@ VARS : TK_CINT '.' VAR ';' VARS
 
 VAR : IDS TK_IS TK_ID
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_pascal( $3.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $3.v ) );
 
         $$ = Atributos();
 
@@ -251,7 +250,7 @@ VAR : IDS TK_IS TK_ID
       }
     | IDS TK_IS TK_ARRAY TK_OF '[' TK_CINT ']' TK_ID
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_pascal( $8.v ),
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $8.v ),
                           toInt( $6.v ));
         $$ = Atributos();
 
@@ -260,11 +259,10 @@ VAR : IDS TK_IS TK_ID
           insere_var_ts( $1.lista_str[i], tipo );
         }
       }
-    | IDS TK_IS TK_ARRAY '[' TK_CINT ']' '[' TK_CINT ']' TK_OF TK_ID
+    | IDS TK_IS TK_ARRAY TK_OF '[' TK_CINT ']' '[' TK_CINT ']' TK_ID
       {
-        // Refactor
-        Tipo tipo = Tipo( traduz_nome_tipo_pascal( $11.v ),
-                          toInt( $5.v ), toInt( $8.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $11.v ),
+                          toInt( $6.v ), toInt( $9.v ) );
 
         $$ = Atributos();
 
@@ -276,7 +274,7 @@ VAR : IDS TK_IS TK_ID
     ;
 
 IDS : IDS ',' TK_ID
-      { $$  = $1;
+      { $$ = $1;
         $$.lista_str.push_back( $3.v ); }
     | TK_ID
       { $$ = Atributos();
@@ -310,18 +308,21 @@ CMDS : CMD ';' CMDS
      | { $$.c = ""; }
      ;
 
-CMD : WRITELN
-    | LEIA
-    | ATRIB
-    | CMD_IF
+CMD_AUX : WRITELN
+        | LEIA
+        | ATRIB
+        | CMD_IF
+        | CMD_FOR
+        | CMD_WHILE
+        | CMD_DO_WHILE
+        | CMD_SWITCH
+        ;
+
+CMD : CMD_AUX
     | BLOCO
-    | CMD_FOR
-    | CMD_WHILE
-    | CMD_DO_WHILE
-    | CMD_SWITCH
     ;
 
-CMD_SWITCH  : TK_SWITCH '(' TK_ID ')' SWITCH_BLOCO
+CMD_SWITCH  : TK_SWITCH TK_ABREP TK_ID TK_FECHAP SWITCH_BLOCO
             {
               $$.c = "";
               string fim_label = gera_label("fim_switch");
@@ -387,7 +388,7 @@ SWITCH_BLOCO  : TK_CASE F ':' CMDS SWITCH_BLOCO
 LEIA :  TK_READ IDS
         {
           for( int i = 0; i < $2.lista_str.size(); i ++ ) {
-            $$.c += "cin >> " + $2.lista_str[i] + ";\n";
+            $$.c += "  cin >> " + $2.lista_str[i] + ";\n";
           }
         }
 
@@ -440,13 +441,15 @@ CMD_FOR : TK_FOR NOME_VAR TK_ATRIB E TK_TO E TK_DO CMD
           }
         ;
 
-CMD_IF : TK_IF E TK_THEN CMD ';' CMD_ELSE
-         { $$ = gera_codigo_if( $2, $4.c, $6.c ); }
-       | TK_IF E TK_THEN BLOCO CMD_ELSE
+CMD_IF : TK_IF E TK_THEN BLOCO CMD_ELSE
          { $$ = gera_codigo_if( $2, $4.c, $5.c ); }
+       | TK_IF E TK_THEN CMD_AUX ';' CMD_ELSE
+         { $$ = gera_codigo_if( $2, $4.c, $6.c ); }
        ;
 
-CMD_ELSE : TK_ELSE CMD
+CMD_ELSE : TK_ELSE CMD_AUX ';'
+           { $$.c = $2.c; cerr << "aqui" << endl; }
+         | TK_ELSE BLOCO
            { $$.c = $2.c; }
          |
            { $$.c = ""; }
@@ -472,7 +475,6 @@ ATRIB : TK_ID TK_ATRIB E
         }
       | TK_ID '[' E ']' TK_ATRIB E
         { // Falta testar: tipo, limite do array, e se a variável existe
-          //cerr << $3.v << endl;
           Tipo tipoArray = consulta_ts( $1.v );
           $$.t = Tipo( tipoArray.tipo_base );
 
@@ -483,11 +485,8 @@ ATRIB : TK_ID TK_ATRIB E
             erro( "Indice de array deve ser integer de zero dimensão: " +
                   $3.t.tipo_base + "/" + toString( $3.t.ndim ) );
 
-          if( $6.t.ndim != 0 || $6.t.tipo_base != tipoArray.tipo_base ) {
-            cerr << $6.v << endl;
-            cerr << $6.t.tipo_base << ' ' << tipoArray.tipo_base << endl;
+          if( $6.t.ndim != 0 || $6.t.tipo_base != tipoArray.tipo_base )
             erro( "Valor de tipo diferente sendo atribuido ao vetor " + $1.v );
-          }
 
           $$.c = $3.c + $6.c;
           if ( tipoArray.tipo_base == "s" )
@@ -612,8 +611,10 @@ F : TK_CINT
     }
   | TK_ID
     { $$.v = $1.v; $$.t = consulta_ts( $1.v ); $$.c = $1.c; }
-  | TK_ID '(' EXPRS ')'
-    { $$.t = Tipo( "i" ); // consulta_ts( $1.v );
+  | TK_ID TK_ABREP EXPRS TK_FECHAP
+    { 
+      cerr << $3.v << endl;
+      $$.t = Tipo( "i" ); // consulta_ts( $1.v );
     // Falta verficar o tipo da função e os parametros.
       $$.v = gera_nome_var_temp( $$.t.tipo_base );
       $$.c = $3.c + "  " + $$.v + " = " + $1.v + "( ";
@@ -1040,14 +1041,14 @@ Atributos gera_codigo_if( Atributos expr, string cmd_then, string cmd_else ) {
 }
 
 
-string traduz_nome_tipo_pascal( string tipo_pascal ) {
+string traduz_nome_tipo_lula( string tipo_pascal ) {
   // No caso do Pascal, a comparacao deveria ser case-insensitive
 
   if( tipo_pascal == "Integer" )
     return "i";
   else if( tipo_pascal == "Boolean" )
     return "b";
-  else if( tipo_pascal == "Real" )
+  else if( tipo_pascal == "Propina" )
     return "d";
   else if( tipo_pascal == "Char" )
     return "c";

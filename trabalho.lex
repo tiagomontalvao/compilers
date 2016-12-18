@@ -43,7 +43,7 @@ COMMENT "(*"([^*]|"*"[^)])*"*)"
 "Do"       		{ yylval = Atributos( yytext ); return TK_DO; }
 "Coligação"    	{ yylval = Atributos( yytext ); return TK_ARRAY; }
 "de"       		{ yylval = Atributos( yytext ); return TK_OF; }
-"Function" 		{ yylval = Atributos( yytext ); return TK_FUNCTION; }
+"PEC" 			{ yylval = Atributos( yytext ); return TK_FUNCTION; }
 
 
 ".."       		{ yylval = Atributos( yytext ); return TK_PTPT; }
