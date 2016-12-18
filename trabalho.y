@@ -108,7 +108,7 @@ string toString( int n );
 Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 );
 Atributos gera_codigo_if( Atributos expr, string cmd_then, string cmd_else );
 
-string traduz_nome_tipo_pascal( string tipo_pascal );
+string traduz_nome_tipo_lula( string tipo_pascal );
 
 string includes =
 "#include <iostream>\n"
@@ -177,7 +177,7 @@ FUNCTION : { empilha_ts(); }  CABECALHO ';' CORPO { desempilha_ts(); } ';'
 
 CABECALHO : TK_FUNCTION TK_ID OPC_PARAM ':' TK_ID
             {
-              Tipo tipo( traduz_nome_tipo_pascal( $5.v ) );
+              Tipo tipo( traduz_nome_tipo_lula( $5.v ) );
 
               $$.c = declara_funcao( $2.v, tipo, $3.lista_str, $3.lista_tipo );
             }
@@ -206,7 +206,7 @@ PARAMS : PARAM ';' PARAMS
 
 PARAM : IDS ':' TK_ID
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_pascal( $3.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $3.v ) );
 
         $$ = Atributos();
         $$.lista_str = $1.lista_str;
@@ -214,10 +214,10 @@ PARAM : IDS ':' TK_ID
         for( int i = 0; i < $1.lista_str.size(); i ++ )
           $$.lista_tipo.push_back( tipo );
       }
-    | IDS ':' TK_ARRAY '[' TK_CINT TK_PTPT TK_CINT ']' TK_OF TK_ID
+    | IDS ':' TK_ARRAY TK_OF '[' TK_CINT ']'  TK_ID
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_pascal( $10.v ),
-                          toInt( $5.v ), toInt( $7.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $8.v ),
+                          toInt( $6.v ) );
 
         $$ = Atributos();
         $$.lista_str = $1.lista_str;
@@ -225,11 +225,10 @@ PARAM : IDS ':' TK_ID
         for( int i = 0; i < $1.lista_str.size(); i ++ )
           $$.lista_tipo.push_back( tipo );
       }
-    | IDS ':' TK_ARRAY '[' TK_CINT TK_PTPT TK_CINT ']' '[' TK_CINT TK_PTPT TK_CINT ']' TK_OF TK_ID
+    | IDS ':' TK_ARRAY TK_OF '[' TK_CINT ']' '[' TK_CINT ']' TK_ID
       {
-        // Refactor
-        Tipo tipo = Tipo( traduz_nome_tipo_pascal( $15.v ),
-                          toInt( $7.v ), toInt( $12.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $11.v ),
+                          toInt( $6.v ), toInt( $9.v ) );
 
         $$ = Atributos();
         $$.lista_str = $1.lista_str;
@@ -263,7 +262,7 @@ VARS :  TK_CINT '.' VAR ';' VARS
 
 VAR : IDS TK_IS TK_ID
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_pascal( $3.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $3.v ) );
 
         $$ = Atributos();
 
@@ -274,7 +273,7 @@ VAR : IDS TK_IS TK_ID
       }
     | IDS TK_IS TK_ARRAY TK_OF '[' TK_CINT ']' TK_ID
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_pascal( $8.v ),
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $8.v ),
                           toInt( $6.v ));
         $$ = Atributos();
 
@@ -283,11 +282,10 @@ VAR : IDS TK_IS TK_ID
           insere_var_ts( $1.lista_str[i], tipo );
         }
       }
-    | IDS TK_IS TK_ARRAY '[' TK_CINT ']' '[' TK_CINT ']' TK_OF TK_ID
+    | IDS TK_IS TK_ARRAY TK_OF '[' TK_CINT ']' '[' TK_CINT ']' TK_ID
       {
-        // Refactor
-        Tipo tipo = Tipo( traduz_nome_tipo_pascal( $11.v ),
-                          toInt( $5.v ), toInt( $8.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $11.v ),
+                          toInt( $6.v ), toInt( $9.v ) );
 
         $$ = Atributos();
 
@@ -299,7 +297,7 @@ VAR : IDS TK_IS TK_ID
     ;
 
 IDS : IDS ',' TK_ID
-      { $$  = $1;
+      { $$ = $1;
         $$.lista_str.push_back( $3.v ); }
     | TK_ID
       { $$ = Atributos();
@@ -333,16 +331,19 @@ CMDS : CMD ';' CMDS
      | { $$.c = ""; }
      ;
 
-CMD : WRITELN
-    | LEIA
-    | ATRIB
-    | CMD_IF
+CMD_AUX : WRITELN
+        | LEIA
+        | ATRIB
+        | CMD_IF
+        | CMD_FOR
+        | CMD_WHILE
+        | CMD_DO_WHILE
+        | CMD_SWITCH
+        | CMD_WATCH
+        ;
+
+CMD : CMD_AUX
     | BLOCO
-    | CMD_FOR
-    | CMD_WHILE
-    | CMD_DO_WHILE
-    | CMD_WATCH
-    | CMD_SWITCH
     ;
 
 CMD_WATCH   : TK_WATCH TK_ID
@@ -356,7 +357,7 @@ CMD_WATCH   : TK_WATCH TK_ID
               $$.c += "cout << endl;\n";
             }
 
-CMD_SWITCH  : TK_SWITCH '(' TK_ID ')' SWITCH_BLOCO
+CMD_SWITCH  : TK_SWITCH TK_ABREP TK_ID TK_FECHAP SWITCH_BLOCO
             {
               $$.c = "";
               string fim_label = gera_label("fim_switch");
@@ -422,7 +423,7 @@ SWITCH_BLOCO  : TK_CASE F ':' CMDS SWITCH_BLOCO
 LEIA :  TK_READ IDS
         {
           for( int i = 0; i < $2.lista_str.size(); i ++ ) {
-            $$.c += "cin >> " + $2.lista_str[i] + ";\n";
+            $$.c += "  cin >> " + $2.lista_str[i] + ";\n";
           }
         }
 
@@ -475,13 +476,15 @@ CMD_FOR : TK_FOR NOME_VAR TK_ATRIB E TK_TO E TK_DO CMD
           }
         ;
 
-CMD_IF : TK_IF E TK_THEN CMD ';' CMD_ELSE
-         { $$ = gera_codigo_if( $2, $4.c, $6.c ); }
-       | TK_IF E TK_THEN BLOCO CMD_ELSE
+CMD_IF : TK_IF E TK_THEN BLOCO CMD_ELSE
          { $$ = gera_codigo_if( $2, $4.c, $5.c ); }
+       | TK_IF E TK_THEN CMD_AUX ';' CMD_ELSE
+         { $$ = gera_codigo_if( $2, $4.c, $6.c ); }
        ;
 
-CMD_ELSE : TK_ELSE CMD
+CMD_ELSE : TK_ELSE CMD_AUX ';'
+           { $$.c = $2.c; cerr << "aqui" << endl; }
+         | TK_ELSE BLOCO
            { $$.c = $2.c; }
          |
            { $$.c = ""; }
@@ -507,7 +510,6 @@ ATRIB : TK_ID TK_ATRIB E
         }
       | TK_ID '[' E ']' TK_ATRIB E
         { // Falta testar: tipo, limite do array, e se a variável existe
-          //cerr << $3.v << endl;
           Tipo tipoArray = consulta_ts( $1.v );
           $$.t = Tipo( tipoArray.tipo_base );
 
@@ -518,11 +520,8 @@ ATRIB : TK_ID TK_ATRIB E
             erro( "Indice de array deve ser integer de zero dimensão: " +
                   $3.t.tipo_base + "/" + toString( $3.t.ndim ) );
 
-          if( $6.t.ndim != 0 || $6.t.tipo_base != tipoArray.tipo_base ) {
-            cerr << $6.v << endl;
-            cerr << $6.t.tipo_base << ' ' << tipoArray.tipo_base << endl;
+          if( $6.t.ndim != 0 || $6.t.tipo_base != tipoArray.tipo_base )
             erro( "Valor de tipo diferente sendo atribuido ao vetor " + $1.v );
-          }
 
           $$.c = $3.c + $6.c;
           if ( tipoArray.tipo_base == "s" )
@@ -553,15 +552,11 @@ ATRIB : TK_ID TK_ATRIB E
 
         int m = tipoArray.tam[1];
 
-        $$.c =  $3.c +
-                $6.c +
+        $$.c =  $3.c + $6.c + gera_teste_limite_array( $3.v, $6.v, tipoArray ) +
                 var1 + " = " + $3.v + " * " + to_string(m) + ";\n" +
                 var2 + " = " + var1 + " + " + $6.v + ";\n" +
                 $1.v + "[" + var2 + "] = " + $9.v + ";\n";
 
-//        $$.c = $3.c +
-  //             gera_teste_limite_array( $3.v, $6.v, tipoArray ) +
-    //           "  " + $$.v + " = " + $1.v + "[" + to_string(idx) + "];\n";
         }
       ;
 
@@ -644,16 +639,17 @@ F : TK_CINT
       string var2 = gera_nome_var_temp( $$.t.tipo_base );
       int m = tipoArray.tam[1];
 
-      $$.c =  $3.c +
-              $6.c +
+      $$.c =  $3.c + $6.c + gera_teste_limite_array( $3.v, $6.v, tipoArray ) +
               var1 + " = " + $3.v + " * " + to_string(m) + ";\n" +
               var2 + " = " + var1 + " + " + $6.v + ";\n" +
               $$.v + " = " + $1.v + "[" + var2 + "];\n";
     }
   | TK_ID
     { $$.v = $1.v; $$.t = consulta_ts( $1.v ); $$.c = $1.c; }
-  | TK_ID '(' EXPRS ')'
-    { $$.t = Tipo( "i" ); // consulta_ts( $1.v );
+  | TK_ID TK_ABREP EXPRS TK_FECHAP
+    { 
+      cerr << $3.v << endl;
+      $$.t = Tipo( "i" ); // consulta_ts( $1.v );
     // Falta verficar o tipo da função e os parametros.
       $$.v = gera_nome_var_temp( $$.t.tipo_base );
       $$.c = $3.c + "  " + $$.v + " = " + $1.v + "( ";
@@ -964,26 +960,6 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
     }
   }
 
-/*
-  ss.v = 1;
-  i = 0;
-label_inicio_for_1:
-  cond_for = i >= tam;
-  if (cond_for) goto label_fim_for_2;
-  tmp1 = v1[i];
-  tmp2 = v2[i];
-  cond_if = tmp1 != tmp2;
-  if (cond_if) goto label_atrib_3;
-label_meio_for_4:
-  i = i + 1;
-  goto label_inicio_for_1;
-label_atrib_3:
-  ss.v = 0;
-  goto label_meio_for_4;
-label_fim_for_2:
-*/
-
-
   // verificar tipos !!!
   // tratar strings separadamente !!!
   if ( opr == "in" ) {
@@ -1015,24 +991,6 @@ label_fim_for_2:
             label_fim + ":;\n";
             return ss;
   }
-/*
-  ss.v = 0;
-  i = 0;
-label_inicio_for_1:
-  cond_for = i >= tam;
-  if (cond_for) goto label_fim_for_2;
-  tmp = v[i];
-  cond_if = tmp == s1.v;
-  if (cond_if) goto label_atrib_3;
-label_meio_for_4:
-  i = i + 1;
-  goto label_inicio_for_1;
-label_atrib_3:
-  ss.v = 1;
-  goto label_meio_for_4;
-label_fim_for_2:
-*/
-
   if( s1.t.tipo_base == "s" && s3.t.tipo_base == "s" ) {
     // falta testar se é o operador "+"
     if ( opr == "+" ) {
@@ -1080,14 +1038,14 @@ Atributos gera_codigo_if( Atributos expr, string cmd_then, string cmd_else ) {
 }
 
 
-string traduz_nome_tipo_pascal( string tipo_pascal ) {
+string traduz_nome_tipo_lula( string tipo_pascal ) {
   // No caso do Pascal, a comparacao deveria ser case-insensitive
 
   if( tipo_pascal == "Integer" )
     return "i";
   else if( tipo_pascal == "Boolean" )
     return "b";
-  else if( tipo_pascal == "Real" )
+  else if( tipo_pascal == "Propina" )
     return "d";
   else if( tipo_pascal == "Char" )
     return "c";
@@ -1172,11 +1130,10 @@ string gera_teste_limite_array( string indice_1, Tipo tipoArray ) {
                                              var_teste_fim + ";\n";
 
   codigo += "  if( " + var_teste + " ) goto " + label_end + ";\n" +
-            "  printf( \"Limite de array ultrapassado: %d <= %d <= %d\", " +
-               "0 ," + indice_1 + ", " +
-               toString( tipoArray.tam[0]-1 ) + " );\n" +
-               "  cout << endl;\n" +
-               "  exit( 1 );\n" +
+            "  printf( \"Limite de array ultrapassado: 0 <= %d <= %d\", " +
+            indice_1 + ", " + toString( tipoArray.tam[0]-1 ) + " );\n" +
+            "  cout << endl;\n" +
+            "  exit( 1 );\n" +
             "  " + label_end + ":;\n";
 
   return codigo;
@@ -1184,24 +1141,27 @@ string gera_teste_limite_array( string indice_1, Tipo tipoArray ) {
 
 string gera_teste_limite_array( string indice_1, string indice_2, Tipo tipoArray ) {
   // Implementar! Perde ponto se não fizer
-  return "";
-  string var_teste_inicio = gera_nome_var_temp( "b" );
-  string var_teste_fim = gera_nome_var_temp( "b" );
+  string var_teste_inicio_1 = gera_nome_var_temp( "b" );
+  string var_teste_fim_1 = gera_nome_var_temp( "b" );
+  string var_teste_inicio_2 = gera_nome_var_temp( "b" );
+  string var_teste_fim_2 = gera_nome_var_temp( "b" );
   string var_teste = gera_nome_var_temp( "b" );
   string label_end = gera_label( "limite_array_ok" );
 
-  string codigo = "  " + var_teste_inicio + " = " + indice_1 + " >= 0;\n" +
-                  "  " + var_teste_fim + " = " + indice_1 + " <= " +
-                  toString( tipoArray.tam[0]-1 ) + ";\n" +
-                  "  " + var_teste + " = " + var_teste_inicio + " && " +
-                                             var_teste_fim + ";\n";
+  string codigo = "  " + var_teste_inicio_1 + " = " + indice_1 + " >= 0;\n" +
+                  "  " + var_teste_fim_1 + " = " + indice_1 + " < " + toString( tipoArray.tam[0] ) + ";\n" +
+                  "  " + var_teste_inicio_2 + " = " + indice_2 + " >= 0;\n" +
+                  "  " + var_teste_fim_2 + " = " + indice_2 + " < " + toString( tipoArray.tam[1] ) + ";\n" +
+                  "  " + var_teste + " = " + var_teste_inicio_1 + " && " + var_teste_fim_1 + ";\n" +
+                  "  " + var_teste + " = " + var_teste + " && " + var_teste_inicio_2 + ";\n" +
+                  "  " + var_teste + " = " + var_teste + " && " + var_teste_fim_2 + ";\n";
 
   codigo += "  if( " + var_teste + " ) goto " + label_end + ";\n" +
-            "  printf( \"Limite de array ultrapassado: %d <= %d <= %d\", " +
-               "0 ," + indice_1 + ", " +
-               toString( tipoArray.tam[0]-1 ) + " );\n" +
-               "  cout << endl;\n" +
-               "  exit( 1 );\n" +
+            "  printf( \"Limite de matriz ultrapassado. Deveria ter 0 <= %d <= %d e 0 <= %d <= %d \", " +
+            indice_1 + ", " + toString( tipoArray.tam[0]-1 ) + ", " +
+            indice_2 + ", " + toString( tipoArray.tam[1]-1 ) + " );\n" +
+            "  cout << endl;\n" +
+            "  exit( 1 );\n" +
             "  " + label_end + ":;\n";
 
   return codigo;
