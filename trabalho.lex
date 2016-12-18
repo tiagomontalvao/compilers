@@ -44,19 +44,36 @@ COMMENT "(*"([^*]|"*"[^)])*"*)"
 "Coligação"    	{ yylval = Atributos( yytext ); return TK_ARRAY; }
 "de"       		{ yylval = Atributos( yytext ); return TK_OF; }
 "Function" 		{ yylval = Atributos( yytext ); return TK_FUNCTION; }
-"Mod"      		{ yylval = Atributos( yytext ); return TK_MOD; }
 
 
 ".."       		{ yylval = Atributos( yytext ); return TK_PTPT; }
 ":="       		{ yylval = Atributos( yytext ); return TK_ATRIB; }
+"="       		{ yylval = Atributos( yytext ); return TK_ATRIB; }
 "recebe"   		{ yylval = Atributos( yytext ); return TK_ATRIB; }
+
+"<"       		{ yylval = Atributos( yytext ); return TK_MENORQ; }
+">"       		{ yylval = Atributos( yytext ); return TK_MAIORQ; }
 "<="       		{ yylval = Atributos( yytext ); return TK_MEIG; }
 ">="       		{ yylval = Atributos( yytext ); return TK_MAIG; }
 "=="       		{ yylval = Atributos( yytext ); return TK_IGU; }
 "!="       		{ yylval = Atributos( yytext ); return TK_DIF; }
+
 "And"      		{ yylval = Atributos( yytext ); return TK_AND; }
 "Or"      		{ yylval = Atributos( yytext ); return TK_OR; }
+"Not"      		{ yylval = Atributos( yytext ); return TK_NOT; }
+
 "foi citado em" { yylval = Atributos( yytext ); return TK_IN; }
+
+"(" 			{ yylval = Atributos( yytext ); return TK_ABREP; }
+")" 			{ yylval = Atributos( yytext ); return TK_FECHAP; }
+
+"+" 			{ yylval = Atributos( yytext ); return TK_MAIS; }
+"-" 			{ yylval = Atributos( yytext ); return TK_MENOS; }
+
+"*" 			{ yylval = Atributos( yytext ); return TK_MULT; }
+"/" 			{ yylval = Atributos( yytext ); return TK_DIV; }
+"mod"			{ yylval = Atributos( yytext ); return TK_MOD; }
+"%" 			{ yylval = Atributos( yytext ); return TK_REST; }
 
 
 {CSTRING}  		{ yylval = Atributos( troca_aspas( yytext ), Tipo( "string" ) );
