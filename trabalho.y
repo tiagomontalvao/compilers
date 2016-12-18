@@ -108,7 +108,7 @@ string toString( int n );
 Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 );
 Atributos gera_codigo_if( Atributos expr, string cmd_then, string cmd_else );
 
-string traduz_nome_tipo_lula( string tipo_pascal );
+string traduz_nome_tipo_lula( string tipo_lula );
 
 string includes =
 "#include <iostream>\n"
@@ -127,8 +127,8 @@ string includes =
 %token TK_COMOPRINTA TK_READ TK_CSTRING TK_FUNCTION TK_WATCH TK_NEWLINE
 %token TK_MOD TK_IGU TK_MENORQ TK_MAIORQ TK_MAIG TK_MEIG TK_DIF TK_IF TK_THEN TK_ELSE
 %token TK_AND TK_OR TK_NOT TK_IN TK_ABREP TK_FECHAP TK_MAIS TK_MENOS TK_MULT TK_DIV TK_REST
-%token TK_FOR TK_SWITCH TK_CASE TK_DEFAULT TK_BREAK TK_TO TK_DO TK_ARRAY TK_OF TK_IS
-%token TK_DA TK_QUE TK_EU TK_TE TK_DOU TK_OUTRA TK_WHILE
+%token TK_FOR TK_SWITCH TK_CASE TK_DEFAULT TK_BREAK TK_TO TK_DO TK_ARRAY TK_DE TK_IS
+%token TK_DA TK_QUE TK_EU TK_TE TK_DOU TK_OUTRA TK_WHILE TK_RETURN
 
 %nonassoc TK_MAIORQ TK_MENORQ TK_MAIG TK_MEIG TK_IGU TK_DIF
 %left TK_AND TK_OR TK_NOT TK_IN
@@ -172,17 +172,22 @@ DECL :  TK_VAR VARS
      | FUNCTION
      ;
 
+RETURN  : TK_RETURN E
+          { $$.c = $2.c + 
+                   "  return " + $2.v + ";\n"; }
+        ;
+
 FUNCTION : { empilha_ts(); }  CABECALHO ';' CORPO { desempilha_ts(); } ';'
            { $$.c = $2.c + " {\n" + $4.c +
-                    "  return Result;\n}\n"; }
+                    "}\n"; }
          ;
 
-CABECALHO : TK_FUNCTION TK_ID OPC_PARAM ':' TK_ID
+CABECALHO : TK_FUNCTION TK_DE TK_ID TK_ID OPC_PARAM
             {
-              Tipo tipo( traduz_nome_tipo_lula( $5.v ) );
+              Tipo tipo( traduz_nome_tipo_lula( $3.v ) );
 
-              $$.c = declara_funcao( $2.v, tipo, $3.lista_str, $3.lista_tipo );
-              insere_funcao_ts( $2.v, tipo, $3.lista_tipo ) ;
+              $$.c = declara_funcao( $4.v, tipo, $5.lista_str, $5.lista_tipo );
+              insere_funcao_ts( $4.v, tipo, $5.lista_tipo ) ;
             }
           ;
 
@@ -207,17 +212,17 @@ PARAMS : PARAM ';' PARAMS
        | PARAM
        ;
 
-PARAM : IDS ':' TK_ID
+PARAM : TK_ID IDS
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_lula( $3.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $1.v ) );
 
         $$ = Atributos();
-        $$.lista_str = $1.lista_str;
+        $$.lista_str = $2.lista_str;
 
-        for( int i = 0; i < $1.lista_str.size(); i ++ )
+        for( int i = 0; i < $2.lista_str.size(); i ++ )
           $$.lista_tipo.push_back( tipo );
       }
-    | IDS ':' TK_ARRAY TK_OF '[' TK_CINT ']'  TK_ID
+    | IDS ':' TK_ARRAY TK_DE '[' TK_CINT ']'  TK_ID
       {
         Tipo tipo = Tipo( traduz_nome_tipo_lula( $8.v ),
                           toInt( $6.v ) );
@@ -228,7 +233,7 @@ PARAM : IDS ':' TK_ID
         for( int i = 0; i < $1.lista_str.size(); i ++ )
           $$.lista_tipo.push_back( tipo );
       }
-    | IDS ':' TK_ARRAY TK_OF '[' TK_CINT ']' '[' TK_CINT ']' TK_ID
+    | IDS ':' TK_ARRAY TK_DE '[' TK_CINT ']' '[' TK_CINT ']' TK_ID
       {
         Tipo tipo = Tipo( traduz_nome_tipo_lula( $11.v ),
                           toInt( $6.v ), toInt( $9.v ) );
@@ -242,11 +247,9 @@ PARAM : IDS ':' TK_ID
     ;
 
 CORPO : TK_VAR VARS BLOCO
-        { $$.c = declara_variavel( "Result", consulta_ts( "Result" ) ) + ";\n" +
-                 $2.c + $3.c; }
+        { $$.c = $2.c + $3.c; }
       | BLOCO
-        { $$.c = declara_variavel( "Result", consulta_ts( "Result" ) ) + ";\n" +
-                 $1.c; }
+        { $$.c = $1.c; }
       ;
 
 VARS :  TK_CINT '.' VAR ';' VARS
@@ -274,7 +277,7 @@ VAR : IDS TK_IS TK_ID
           insere_var_ts( $1.lista_str[i], tipo );
         }
       }
-    | IDS TK_IS TK_ARRAY TK_OF '[' TK_CINT ']' TK_ID
+    | IDS TK_IS TK_ARRAY TK_DE '[' TK_CINT ']' TK_ID
       {
         Tipo tipo = Tipo( traduz_nome_tipo_lula( $8.v ),
                           toInt( $6.v ));
@@ -285,7 +288,7 @@ VAR : IDS TK_IS TK_ID
           insere_var_ts( $1.lista_str[i], tipo );
         }
       }
-    | IDS TK_IS TK_ARRAY TK_OF '[' TK_CINT ']' '[' TK_CINT ']' TK_ID
+    | IDS TK_IS TK_ARRAY TK_DE '[' TK_CINT ']' '[' TK_CINT ']' TK_ID
       {
         Tipo tipo = Tipo( traduz_nome_tipo_lula( $11.v ),
                           toInt( $6.v ), toInt( $9.v ) );
@@ -338,6 +341,7 @@ CMD_ONELINE : COMOPRINTA
             | LEIA
             | ATRIB
             | CMD_WATCH
+            | RETURN
             ;
 
 CMD_BLOCO : BLOCO
@@ -463,16 +467,25 @@ CMD_WHILE : TK_DA E TK_QUE TK_EU TK_TE TK_DOU TK_OUTRA CMD_ONELINE ';'
           }
         ;
 
-CMD_DO_WHILE : TK_DO CMD TK_WHILE E
-          {
-            string label_inicio = gera_label( "inicio_while" );
+CMD_DO_WHILE : TK_DO CMD_BLOCO TK_WHILE E
+               {
+                 string label_inicio = gera_label( "inicio_while" );
 
-            $$.c =  label_inicio + ":\n" +
-                    $2.c +
-                    $4.c +
-                    "if (" + $4.v + ") goto " + label_inicio + ";\n";
-          }
-        ;
+                    $$.c =  label_inicio + ":\n" +
+                            $2.c +
+                            $4.c +
+                            "if (" + $4.v + ") goto " + label_inicio + ";\n";
+               }
+             | TK_DO CMD_ONELINE ';' TK_WHILE E
+               {
+                 string label_inicio = gera_label( "inicio_while" );
+
+                    $$.c =  label_inicio + ":\n" +
+                            $2.c +
+                            $5.c +
+                            "if (" + $5.v + ") goto " + label_inicio + ";\n";
+               }
+             ;
 
 
 CMD_FOR : TK_FOR NOME_VAR TK_ATRIB E TK_TO E TK_DO CMD_BLOCO
@@ -524,7 +537,7 @@ CMD_IF : TK_IF E TK_THEN CMD_BLOCO CMD_ELSE
        ;
 
 CMD_ELSE : TK_ELSE CMD_ONELINE ';'
-           { $$.c = $2.c; cerr << "aqui" << endl; }
+           { $$.c = $2.c; }
          | TK_ELSE CMD_BLOCO
            { $$.c = $2.c; }
          |
@@ -918,8 +931,6 @@ void insere_funcao_ts( string nome_func,
   if( ts[ts.size()-2].find( nome_func ) != ts[ts.size()-2].end() )
     erro( "Função já declarada: " + nome_func );
 
-  cerr << ": " << nome_func << endl;
-
   ts[ts.size()-2][ nome_func ] = Tipo( retorno, params );
 }
 
@@ -1135,20 +1146,23 @@ Atributos gera_codigo_if( Atributos expr, string cmd_then, string cmd_else ) {
 }
 
 
-string traduz_nome_tipo_lula( string tipo_pascal ) {
+string traduz_nome_tipo_lula( string tipo_lula ) {
 
-  if( tipo_pascal == "Integer" )
+  // deixando as letras minúsculas para comparação
+  for (auto& c: tipo_lula) c |= 32;
+
+  if( tipo_lula == "integro" || tipo_lula == "integros" )
     return "i";
-  else if( tipo_pascal == "Boolean" )
+  else if( tipo_lula == "bool" || tipo_lula == "bools" )
     return "b";
-  else if( tipo_pascal == "Propina" )
+  else if( tipo_lula == "corrupto" || tipo_lula == "corruptos" )
     return "d";
-  else if( tipo_pascal == "Char" )
+  else if( tipo_lula == "detento" || tipo_lula == "detentos" )
     return "c";
-  else if( tipo_pascal == "String" )
+  else if( tipo_lula == "cadeia" || tipo_lula == "cadeias" )
     return "s";
   else
-    erro( "Tipo inválido: " + tipo_pascal );
+    erro( "Tipo inválido: " + tipo_lula );
 }
 
 map<string, string> inicializaMapEmC() {
@@ -1168,15 +1182,12 @@ string declara_funcao( string nome, Tipo tipo,
   if( em_C[ tipo.tipo_base ] == "" )
     erro( "Tipo inválido: " + tipo.tipo_base );
 
-  insere_var_ts( "Result", tipo );
-
   if( nomes.size() != tipos.size() )
     erro( "Bug no compilador! Nomes e tipos de parametros diferentes." );
 
   string aux = "";
 
   for( int i = 0; i < nomes.size(); i++ ) {
-    cerr << nomes[i] << ' ' << tipos[i].tipo_base << endl;
     aux += declara_variavel( nomes[i], tipos[i] ) +
            (i == nomes.size()-1 ? " " : ", ");
     insere_var_ts( nomes[i], tipos[i] );
