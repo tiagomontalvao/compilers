@@ -1,6 +1,6 @@
 %{
-#include <iostream>
 #include <string>
+#include <iostream>
 #include <vector>
 #include <stdio.h>
 #include <stdlib.h>
@@ -524,10 +524,11 @@ ATRIB : TK_ID TK_ATRIB E
             erro( "Valor de tipo diferente sendo atribuido ao vetor " + $1.v );
 
           $$.c = $3.c + $6.c;
-          if ( tipoArray.tipo_base == "s" )
-            $$.c += "  strncpy( " + $1.v + ", " + $3.v + ", 256 );\n";
-          else
-           $$.c += "  " + $1.v + "[" + $3.v + "] = " + $6.v + ";\n";
+          if ( tipoArray.tipo_base == "s" ) {
+            $$.c += "  strncpy( " + $1.v + " + " + $3.v + " * 256, " + $6.v + ", 256 );\n";
+          } else {
+             $$.c += "  " + $1.v + "[" + $3.v + "] = " + $6.v + ";\n";
+           }
         }
       | TK_ID '[' E ']' '[' E ']' TK_ATRIB E
         {
@@ -604,6 +605,7 @@ F : TK_CINT
   | TK_ID '[' E ']'
     {
       Tipo tipoArray = consulta_ts( $1.v );
+      $$.c = tipoArray.tipo_base;
       $$.t = Tipo( tipoArray.tipo_base );
       if( tipoArray.ndim != 1 )
         erro( "Variável " + $1.v + " não é array de uma dimensão" );
@@ -613,9 +615,20 @@ F : TK_CINT
               $3.t.tipo_base + "/" + toString( $3.t.ndim ) );
 
       $$.v = gera_nome_var_temp( $$.t.tipo_base );
-      $$.c = $3.c +
-             gera_teste_limite_array( $3.v, tipoArray ) +
-             "  " + $$.v + " = " + $1.v + "[" + $3.v + "];\n";
+
+      if ($$.t.tipo_base == "s") {
+        string i = gera_nome_var_temp( "i" );
+
+        $$.c = $3.c + gera_teste_limite_array( $3.v, tipoArray );
+
+        $$.c += "for (int " + i + " = 0; " + i + " < 256; " + i + "++)\n";
+        $$.c += $$.v + "[" + i + "] = " + $1.v + "[" + i + "];\n";
+
+      } else {
+        $$.c = $3.c +
+               gera_teste_limite_array( $3.v, tipoArray ) +
+               "  " + $$.v + " = " + $1.v + "[" + $3.v + "];\n";
+      }
     }
   | TK_ID '[' E ']' '[' E ']'
     {
@@ -647,7 +660,7 @@ F : TK_CINT
   | TK_ID
     { $$.v = $1.v; $$.t = consulta_ts( $1.v ); $$.c = $1.c; }
   | TK_ID TK_ABREP EXPRS TK_FECHAP
-    { 
+    {
       cerr << $3.v << endl;
       $$.t = Tipo( "i" ); // consulta_ts( $1.v );
     // Falta verficar o tipo da função e os parametros.
