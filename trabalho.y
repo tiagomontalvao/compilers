@@ -12,6 +12,9 @@ int yylex();
 void yyerror( const char* st );
 void erro( string msg );
 
+// Contador de linhas de variáveis declaradas.
+int nvar = 0;
+
 // Faz o mapeamento dos tipos dos operadores
 map< string, string > tipo_opr;
 
@@ -150,8 +153,20 @@ DECLS : DECL DECLS
         { $$.c = ""; }
       ;
 
-DECL : TK_VAR VARS
-       { $$.c = $2.c; }
+DECL :  TK_VAR VARS
+        {
+          $$.c = $2.c;
+
+          int count = 1;
+
+          for (int i = 0; i < $2.lista_str.size(); i++) {
+            if (stoi($2.lista_str[i]) != count) {
+              erro ("Depoimentos fora de ordem. Comece com 1, depois 2, depois 3, 4, 5...");
+              $$.c += $2.lista_str[i] + " ";
+            }
+            count++;
+          }
+        }
      | FUNCTION
      ;
 
@@ -232,8 +247,16 @@ CORPO : TK_VAR VARS BLOCO
                  $1.c; }
       ;
 
-VARS : TK_CINT '.' VAR ';' VARS
-       { $$.c = $3.c + $5.c; }
+VARS :  TK_CINT '.' VAR ';' VARS
+        {
+          $$.lista_str.push_back($1.v);
+
+          for (int i = 0; i < $5.lista_str.size(); i++) {
+            $$.lista_str.push_back($5.lista_str[i]);
+          }
+
+          $$.c = $3.c + $5.c;
+        }
      |
        { $$ = Atributos(); }
      ;
