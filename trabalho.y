@@ -121,14 +121,14 @@ string includes =
 %}
 
 %token TK_ID TK_CINT TK_CDOUBLE TK_VAR TK_PROGRAM TK_BEGIN TK_END TK_ATRIB
-%token TK_WRITELN TK_READ TK_CSTRING TK_FUNCTION TK_MOD TK_IGU
-%token TK_MAIG TK_MEIG TK_DIF TK_IF TK_THEN TK_ELSE TK_AND TK_OR TK_IN
+%token TK_WRITELN TK_READ TK_CSTRING TK_FUNCTION
+%token TK_MOD TK_IGU TK_MENORQ TK_MAIORQ TK_MAIG TK_MEIG TK_DIF TK_IF TK_THEN TK_ELSE TK_AND TK_OR TK_NOT TK_IN TK_ABREP TK_FECHAP TK_MAIS TK_MENOS TK_MULT TK_DIV TK_REST
 %token TK_FOR TK_WHILE TK_SWITCH TK_CASE TK_DEFAULT TK_BREAK TK_TO TK_DO TK_ARRAY TK_OF TK_PTPT TK_IS
 
-%left TK_AND TK_OR TK_IN 
-%nonassoc '<' '>' TK_MAIG TK_MEIG '=' TK_IGU TK_DIF
-%left '+' '-'
-%left '*' '/' TK_MOD
+%nonassoc TK_MAIORQ TK_MENORQ TK_MAIG TK_MEIG TK_IGU TK_DIF
+%left TK_AND TK_OR TK_NOT TK_IN
+%left TK_MAIS TK_MENOS
+%left TK_MULT TK_DIV TK_REST TK_MOD
 
 %%
 
@@ -168,7 +168,7 @@ CABECALHO : TK_FUNCTION TK_ID OPC_PARAM ':' TK_ID
             }
           ;
 
-OPC_PARAM : '(' PARAMS ')'
+OPC_PARAM : TK_ABREP PARAMS TK_FECHAP
             { $$ = $2; }
           |
             { $$ = Atributos(); }
@@ -526,21 +526,21 @@ ATRIB : TK_ID TK_ATRIB E
         }
       ;
 
-E : E '+' E
+E : E TK_MAIS E
     { $$ = gera_codigo_operador( $1, "+", $3 ); }
-  | E '-' E
+  | E TK_MENOS E
     { $$ = gera_codigo_operador( $1, "-", $3 ); }
-  | '-' E
+  | TK_MENOS E %prec  TK_MULT
     { $$ = gera_codigo_operador( Atributos( "0", Tipo ("i") ), "-", $2 ); }
-  | E '*' E
+  | E TK_MULT E
     { $$ = gera_codigo_operador( $1, "*", $3 ); }
   | E TK_MOD E
     { $$ = gera_codigo_operador( $1, "%", $3 ); }
-  | E '/' E
+  | E TK_DIV E
     { $$ = gera_codigo_operador( $1, "/", $3 ); }
-  | E '<' E
+  | E TK_MENORQ E
     { $$ = gera_codigo_operador( $1, "<", $3 ); }
-  | E '>' E
+  | E TK_MAIORQ E
     { $$ = gera_codigo_operador( $1, ">", $3 ); }
   | E TK_MEIG E
     { $$ = gera_codigo_operador( $1, "<=", $3 ); }
@@ -556,7 +556,7 @@ E : E '+' E
     { $$ = gera_codigo_operador( $1, "||", $3 ); }
   | E TK_IN E
     { $$ = gera_codigo_operador( $1, "in", $3 ); }
-  | '(' E ')'
+  | TK_ABREP E TK_FECHAP
     { $$ = $2; }
   | F
   ;
@@ -920,7 +920,7 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
       } else {
         ss.c = s1.c + s3.c + "  " + ss.v + " = " + (opr == "==" ? "0" : "1") + ";\n";
         return ss;
-      } 
+      }
     }
   }
 
