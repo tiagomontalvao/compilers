@@ -29,6 +29,7 @@ COMMENT "(*"([^*]|"*"[^)])*"*)"
 "Suíço"      	{ yylval = Atributos( yytext ); return TK_END; }
 "}"   			{ yylval = Atributos( yytext ); return TK_END; }
 "Como printa, deputado?"  { yylval = Atributos( yytext ); return TK_WRITELN; }
+"Mas o que é isso aqui?"  { yylval = Atributos( yytext ); return TK_WATCH; }
 "Leia" 			{ yylval = Atributos( yytext ); return TK_READ; }
 "If"       		{ yylval = Atributos( yytext ); return TK_IF; }
 "Then"     		{ yylval = Atributos( yytext ); return TK_THEN; }

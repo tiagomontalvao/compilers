@@ -121,7 +121,7 @@ string includes =
 %}
 
 %token TK_ID TK_CINT TK_CDOUBLE TK_VAR TK_PROGRAM TK_BEGIN TK_END TK_ATRIB
-%token TK_WRITELN TK_READ TK_CSTRING TK_FUNCTION
+%token TK_WRITELN TK_READ TK_CSTRING TK_FUNCTION TK_WATCH
 %token TK_MOD TK_IGU TK_MENORQ TK_MAIORQ TK_MAIG TK_MEIG TK_DIF TK_IF TK_THEN TK_ELSE TK_AND TK_OR TK_NOT TK_IN TK_ABREP TK_FECHAP TK_MAIS TK_MENOS TK_MULT TK_DIV TK_REST
 %token TK_FOR TK_WHILE TK_SWITCH TK_CASE TK_DEFAULT TK_BREAK TK_TO TK_DO TK_ARRAY TK_OF TK_PTPT TK_IS
 
@@ -316,11 +316,23 @@ CMD_AUX : WRITELN
         | CMD_WHILE
         | CMD_DO_WHILE
         | CMD_SWITCH
+        | CMD_WATCH
         ;
 
 CMD : CMD_AUX
     | BLOCO
     ;
+
+CMD_WATCH   : TK_WATCH TK_ID
+            {
+              $$ = Atributos();
+              $$.c = "cout << \"";
+              $$.c += $2.v;
+              $$.c += "\";\n";
+              $$.c += "cout << \" vale \";\n";
+              $$.c += "cout << " + $2.v + ";\n";
+              $$.c += "cout << endl;\n";
+            }
 
 CMD_SWITCH  : TK_SWITCH TK_ABREP TK_ID TK_FECHAP SWITCH_BLOCO
             {
@@ -925,26 +937,6 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
     }
   }
 
-/*
-  ss.v = 1;
-  i = 0;
-label_inicio_for_1:
-  cond_for = i >= tam;
-  if (cond_for) goto label_fim_for_2;
-  tmp1 = v1[i];
-  tmp2 = v2[i];
-  cond_if = tmp1 != tmp2;
-  if (cond_if) goto label_atrib_3;
-label_meio_for_4:
-  i = i + 1;
-  goto label_inicio_for_1;
-label_atrib_3:
-  ss.v = 0;
-  goto label_meio_for_4;
-label_fim_for_2:
-*/
-
-
   // verificar tipos !!!
   // tratar strings separadamente !!!
   if ( opr == "in" ) {
@@ -976,24 +968,6 @@ label_fim_for_2:
             label_fim + ":;\n";
             return ss;
   }
-/*
-  ss.v = 0;
-  i = 0;
-label_inicio_for_1:
-  cond_for = i >= tam;
-  if (cond_for) goto label_fim_for_2;
-  tmp = v[i];
-  cond_if = tmp == s1.v;
-  if (cond_if) goto label_atrib_3;
-label_meio_for_4:
-  i = i + 1;
-  goto label_inicio_for_1;
-label_atrib_3:
-  ss.v = 1;
-  goto label_meio_for_4;
-label_fim_for_2:
-*/
-
   if( s1.t.tipo_base == "s" && s3.t.tipo_base == "s" ) {
     // falta testar se é o operador "+"
     if ( opr == "+" ) {
@@ -1159,15 +1133,6 @@ string gera_teste_limite_array( string indice_1, string indice_2, Tipo tipoArray
                   "  " + var_teste + " = " + var_teste + " && " + var_teste_inicio_2 + ";\n" +
                   "  " + var_teste + " = " + var_teste + " && " + var_teste_fim_2 + ";\n";
 
-/*
-  codigo += "  if( " + var_teste + " ) goto " + label_end + ";\n" +
-            "  printf( \"Limite de array ultrapassado: %d <= %d <= %d\", " +
-               "0 ," + indice_1 + ", " +
-               toString( tipoArray.tam[0]-1 ) + " );\n" +
-               "  cout << endl;\n" +
-               "  exit( 1 );\n" +
-            "  " + label_end + ":;\n";
-*/
   codigo += "  if( " + var_teste + " ) goto " + label_end + ";\n" +
             "  printf( \"Limite de matriz ultrapassado. Deveria ter 0 <= %d <= %d e 0 <= %d <= %d \", " +
             indice_1 + ", " + toString( tipoArray.tam[0]-1 ) + ", " +
