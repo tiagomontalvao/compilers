@@ -165,6 +165,7 @@ CABECALHO : TK_FUNCTION TK_ID OPC_PARAM ':' TK_ID
               Tipo tipo( traduz_nome_tipo_lula( $5.v ) );
 
               $$.c = declara_funcao( $2.v, tipo, $3.lista_str, $3.lista_tipo );
+              insere_funcao_ts( $2.v, tipo, $3.lista_tipo ) ;
             }
           ;
 
@@ -464,7 +465,7 @@ CMD_ELSE : TK_ELSE CMD_AUX ';'
          | TK_ELSE BLOCO
            { $$.c = $2.c; }
          |
-           { $$.c = ""; }
+           { $$ = Atributos(); }
          ;
 
 WRITELN : TK_WRITELN E
@@ -477,6 +478,9 @@ WRITELN : TK_WRITELN E
 ATRIB : TK_ID TK_ATRIB E
         { // Falta verificar se pode atribuir (perde ponto se não fizer).
           $1.t = consulta_ts( $1.v ) ;
+
+          if( $1.t.tipo_base != $3.t.tipo_base )
+            erro( "Tipos incompatíveis na atribuição" );
 
           if( $1.t.tipo_base == "s" )
             $$.c = $3.c + "  strncpy( " + $1.v + ", " + $3.v + ", 256 );\n";
@@ -625,16 +629,25 @@ F : TK_CINT
     { $$.v = $1.v; $$.t = consulta_ts( $1.v ); $$.c = $1.c; }
   | TK_ID TK_ABREP EXPRS TK_FECHAP
     { 
-      cerr << $3.v << endl;
-      $$.t = Tipo( "i" ); // consulta_ts( $1.v );
-    // Falta verficar o tipo da função e os parametros.
+      cerr << $1.v << endl;
+      Tipo tipo_func = consulta_ts( $1.v );
+      cerr << tipo_func.params.size() << ' ' << $3.lista_str.size() << endl;
+
+      if ( tipo_func.params.size() != $3.lista_str.size() )
+        erro( "Quantidade errada de parâmetros" );
+
+      //Tipo tipo_func = ( $1.v );
+      $$.t = tipo_func.retorno[0].tipo_base;
+
+    // Falta verificar o tipo da função e os parametros.
       $$.v = gera_nome_var_temp( $$.t.tipo_base );
       $$.c = $3.c + "  " + $$.v + " = " + $1.v + "( ";
 
-      for( int i = 0; i < $3.lista_str.size() - 1; i++ )
-        $$.c += $3.lista_str[i] + ", ";
-
-      $$.c += $3.lista_str[$3.lista_str.size()-1] + " );\n";
+      for( int i = 0; i < $3.lista_str.size(); i++ ) {
+        if ( $3.lista_tipo[i].tipo_base != tipo_func.params[i].tipo_base )
+          erro( "Parâmetro de tipo imcompatível" );
+        $$.c += $3.lista_str[i] + (i == $3.lista_str.size() - 1 ? " );\n" : ", ");
+      }
     }
   ;
 
@@ -643,11 +656,14 @@ EXPRS : EXPRS ',' E
         { $$ = Atributos();
           $$.c = $1.c + $3.c;
           $$.lista_str = $1.lista_str;
-          $$.lista_str.push_back( $3.v ); }
+          $$.lista_str.push_back( $3.v );
+          $$.lista_tipo = $1.lista_tipo;
+          $$.lista_tipo.push_back( $3.t ); }
       | E
         { $$ = Atributos();
           $$.c = $1.c;
-          $$.lista_str.push_back( $1.v ); }
+          $$.lista_str.push_back( $1.v );
+          $$.lista_tipo.push_back( $1.t ); }
       ;
 
 NOME_VAR : TK_ID
@@ -816,6 +832,8 @@ void insere_funcao_ts( string nome_func,
                        Tipo retorno, vector<Tipo> params ) {
   if( ts[ts.size()-2].find( nome_func ) != ts[ts.size()-2].end() )
     erro( "Função já declarada: " + nome_func );
+
+  cerr << ": " << nome_func << endl;
 
   ts[ts.size()-2][ nome_func ] = Tipo( retorno, params );
 }
@@ -1057,6 +1075,7 @@ string declara_funcao( string nome, Tipo tipo,
   string aux = "";
 
   for( int i = 0; i < nomes.size(); i++ ) {
+    cerr << nomes[i] << ' ' << tipos[i].tipo_base << endl;
     aux += declara_variavel( nomes[i], tipos[i] ) +
            (i == nomes.size()-1 ? " " : ", ");
     insere_var_ts( nomes[i], tipos[i] );
@@ -1117,7 +1136,6 @@ string gera_teste_limite_array( string indice_1, Tipo tipoArray ) {
 }
 
 string gera_teste_limite_array( string indice_1, string indice_2, Tipo tipoArray ) {
-  // Implementar! Perde ponto se não fizer
   string var_teste_inicio_1 = gera_nome_var_temp( "b" );
   string var_teste_fim_1 = gera_nome_var_temp( "b" );
   string var_teste_inicio_2 = gera_nome_var_temp( "b" );
