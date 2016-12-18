@@ -1,6 +1,6 @@
 %{
-#include <iostream>
 #include <string>
+#include <iostream>
 #include <vector>
 #include <stdio.h>
 #include <stdlib.h>
@@ -161,7 +161,7 @@ DECL :  TK_VAR VARS
 
           for (int i = 0; i < $2.lista_str.size(); i++) {
             if (stoi($2.lista_str[i]) != count) {
-              erro ("Depoimentos fora de ordem. Comece com 1, depois 2, depois 3, 4, 5...");
+              erro ("Delação inconsistente. Depoimentos fora de ordem. Comece com 1, depois 2, 3, 4...");
               $$.c += $2.lista_str[i] + " ";
             }
             count++;
@@ -528,10 +528,11 @@ ATRIB : TK_ID TK_ATRIB E
             erro( "Valor de tipo diferente sendo atribuido ao vetor " + $1.v );
 
           $$.c = $3.c + $6.c;
-          if ( tipoArray.tipo_base == "s" )
-            $$.c += "  strncpy( " + $1.v + ", " + $3.v + ", 256 );\n";
-          else
-           $$.c += "  " + $1.v + "[" + $3.v + "] = " + $6.v + ";\n";
+          if ( tipoArray.tipo_base == "s" ) {
+            $$.c += "  strncpy( " + $1.v + " + " + $3.v + " * 256, " + $6.v + ", 256 );\n";
+          } else {
+             $$.c += "  " + $1.v + "[" + $3.v + "] = " + $6.v + ";\n";
+           }
         }
       | TK_ID '[' E ']' '[' E ']' TK_ATRIB E
         {
@@ -608,6 +609,7 @@ F : TK_CINT
   | TK_ID '[' E ']'
     {
       Tipo tipoArray = consulta_ts( $1.v );
+      $$.c = tipoArray.tipo_base;
       $$.t = Tipo( tipoArray.tipo_base );
       if( tipoArray.ndim != 1 )
         erro( "Variável " + $1.v + " não é array de uma dimensão" );
@@ -617,9 +619,20 @@ F : TK_CINT
               $3.t.tipo_base + "/" + toString( $3.t.ndim ) );
 
       $$.v = gera_nome_var_temp( $$.t.tipo_base );
-      $$.c = $3.c +
-             gera_teste_limite_array( $3.v, tipoArray ) +
-             "  " + $$.v + " = " + $1.v + "[" + $3.v + "];\n";
+
+      if ($$.t.tipo_base == "s") {
+        string i = gera_nome_var_temp( "i" );
+
+        $$.c = $3.c + gera_teste_limite_array( $3.v, tipoArray );
+
+        $$.c += "for (int " + i + " = 0; " + i + " < 256; " + i + "++)\n";
+        $$.c += $$.v + "[" + i + "] = " + $1.v + "[" + i + "];\n";
+
+      } else {
+        $$.c = $3.c +
+               gera_teste_limite_array( $3.v, tipoArray ) +
+               "  " + $$.v + " = " + $1.v + "[" + $3.v + "];\n";
+      }
     }
   | TK_ID '[' E ']' '[' E ']'
     {
@@ -651,7 +664,7 @@ F : TK_CINT
   | TK_ID
     { $$.v = $1.v; $$.t = consulta_ts( $1.v ); $$.c = $1.c; }
   | TK_ID TK_ABREP EXPRS TK_FECHAP
-    { 
+    {
       cerr << $1.v << endl;
       Tipo tipo_func = consulta_ts( $1.v );
       cerr << tipo_func.params.size() << ' ' << $3.lista_str.size() << endl;
@@ -663,6 +676,7 @@ F : TK_CINT
       $$.t = tipo_func.retorno[0].tipo_base;
 
     // Falta verificar o tipo da função e os parametros.
+
       $$.v = gera_nome_var_temp( $$.t.tipo_base );
       $$.c = $3.c + "  " + $$.v + " = " + $1.v + "( ";
 
@@ -731,6 +745,8 @@ void inicializa_operadores() {
   tipo_opr["c+s"] = "s";
   tipo_opr["s+c"] = "s";
   tipo_opr["c+c"] = "s";
+  tipo_opr["s+d"] = "s";
+  tipo_opr["d+s"] = "s";
 
   // Resultados para o operador "-"
   tipo_opr["i-i"] = "i";
@@ -1010,9 +1026,8 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
             return ss;
   }
   if( s1.t.tipo_base == "s" && s3.t.tipo_base == "s" ) {
-    // falta testar se é o operador "+"
     if ( opr == "+" ) {
-      ss.c = s1.c + s3.c + // Codigo das expressões dos filhos da arvore.
+      ss.c = s1.c + s3.c +
              "  strncpy( " + ss.v + ", " + s1.v + ", 256 );\n" +
              "  strncat( " + ss.v + ", " + s3.v + ", 256 );\n";
     }
@@ -1030,7 +1045,7 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
   else if( s1.t.tipo_base == "c" && s3.t.tipo_base == "s" )
     ;
   else {
-    ss.c = s1.c + s3.c + // Codigo das expressões dos filhos da arvore.
+    ss.c = s1.c + s3.c +
            "  " + ss.v + " = " + s1.v + " " + opr + " " + s3.v + ";\n";
   }
 
