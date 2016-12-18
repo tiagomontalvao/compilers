@@ -4,26 +4,21 @@ Depoimentos
 	1. a é Integer;
 	2. b é Integer;
 
-Function
+PEC
 mdc( a, b: Integer ) : Integer;
 Príncipe
 	If b == 0 Then {
-		Result recebe a+1;
+		Result recebe a;
 	}
 	Else
 		Result recebe mdc(b, a mod b);
 Suíço;
 
 Príncipe
-	Como printa, deputado? 'Programa MDC';
-	Como printa, deputado? 'Digite o primeiro numero:';
+	Como printa, deputado? 'Programa MDC' +n;
+	Como printa, deputado? 'Digite o primeiro numero: ';
 	Leia a;
-	Como printa, deputado? 'Digite o segundo numero:';
+	Como printa, deputado? 'Digite o segundo numero: ';
 	Leia b;
-	Como printa, deputado? 'O MDC entre ';
-	Como printa, deputado? a;
-	Como printa, deputado? ' e ';
-	Como printa, deputado? b;
-	Como printa, deputado? ' é ';
-	Como printa, deputado? mdc(a, b);
+	Como printa, deputado? 'O MDC entre ' + a + ' e ' + b + ' é ' + mdc(a,b) +n;
 Suíço.

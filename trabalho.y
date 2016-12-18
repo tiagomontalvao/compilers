@@ -124,9 +124,11 @@ string includes =
 %}
 
 %token TK_ID TK_CINT TK_CDOUBLE TK_VAR TK_PROGRAM TK_BEGIN TK_END TK_ATRIB
-%token TK_WRITELN TK_READ TK_CSTRING TK_FUNCTION TK_WATCH
-%token TK_MOD TK_IGU TK_MENORQ TK_MAIORQ TK_MAIG TK_MEIG TK_DIF TK_IF TK_THEN TK_ELSE TK_AND TK_OR TK_NOT TK_IN TK_ABREP TK_FECHAP TK_MAIS TK_MENOS TK_MULT TK_DIV TK_REST
-%token TK_FOR TK_WHILE TK_SWITCH TK_CASE TK_DEFAULT TK_BREAK TK_TO TK_DO TK_ARRAY TK_OF TK_PTPT TK_IS
+%token TK_COMOPRINTA TK_READ TK_CSTRING TK_FUNCTION TK_WATCH TK_NEWLINE
+%token TK_MOD TK_IGU TK_MENORQ TK_MAIORQ TK_MAIG TK_MEIG TK_DIF TK_IF TK_THEN TK_ELSE
+%token TK_AND TK_OR TK_NOT TK_IN TK_ABREP TK_FECHAP TK_MAIS TK_MENOS TK_MULT TK_DIV TK_REST
+%token TK_FOR TK_SWITCH TK_CASE TK_DEFAULT TK_BREAK TK_TO TK_DO TK_ARRAY TK_OF TK_IS
+%token TK_DA TK_QUE TK_EU TK_TE TK_DOU TK_OUTRA TK_WHILE
 
 %nonassoc TK_MAIORQ TK_MENORQ TK_MAIG TK_MEIG TK_IGU TK_DIF
 %left TK_AND TK_OR TK_NOT TK_IN
@@ -332,31 +334,34 @@ CMDS : CMD ';' CMDS
      | { $$.c = ""; }
      ;
 
-CMD_AUX : WRITELN
-        | LEIA
-        | ATRIB
-        | CMD_IF
-        | CMD_FOR
-        | CMD_WHILE
-        | CMD_DO_WHILE
-        | CMD_SWITCH
-        | CMD_WATCH
-        ;
+CMD_ONELINE : COMOPRINTA
+            | LEIA
+            | ATRIB
+            | CMD_WATCH
+            ;
 
-CMD : CMD_AUX
-    | BLOCO
+CMD_BLOCO : BLOCO
+          | CMD_IF
+          | CMD_FOR
+          | CMD_WHILE
+          | CMD_DO_WHILE
+          | CMD_SWITCH
+          ;
+
+CMD : CMD_ONELINE
+    | CMD_BLOCO
     ;
 
-CMD_WATCH   : TK_WATCH TK_ID
-            {
-              $$ = Atributos();
-              $$.c = "cout << \"";
-              $$.c += $2.v;
-              $$.c += "\";\n";
-              $$.c += "cout << \" vale \";\n";
-              $$.c += "cout << " + $2.v + ";\n";
-              $$.c += "cout << endl;\n";
-            }
+CMD_WATCH : TK_WATCH TK_ID
+          {
+            $$ = Atributos();
+            $$.c = "cout << \"";
+            $$.c += $2.v;
+            $$.c += "\";\n";
+            $$.c += "cout << \" vale \";\n";
+            $$.c += "cout << " + $2.v + ";\n";
+            $$.c += "cout << endl;\n";
+          }
 
 CMD_SWITCH  : TK_SWITCH TK_ABREP TK_ID TK_FECHAP SWITCH_BLOCO
             {
@@ -428,7 +433,7 @@ LEIA :  TK_READ IDS
           }
         }
 
-CMD_WHILE : TK_WHILE E CMD
+CMD_WHILE : TK_DA E TK_QUE TK_EU TK_TE TK_DOU TK_OUTRA CMD_ONELINE ';'
           {
             string label_inicio = gera_label( "inicio_while" );
             string label_fim = gera_label( "fim_while" );
@@ -438,7 +443,21 @@ CMD_WHILE : TK_WHILE E CMD
 
             $$.c =  label_inicio + ":;\n" + $2.c + condicao + " = !" + $2.v + ";\n" +
                     "if ( " + condicao + " ) goto " + label_fim + ";\n" +
-                    $3.c +
+                    $8.c +
+                    + "goto " + label_inicio + ";\n" +
+                    label_fim + ":;\n";
+          }
+          | TK_DA E TK_QUE TK_EU TK_TE TK_DOU TK_OUTRA CMD_BLOCO
+          {
+            string label_inicio = gera_label( "inicio_while" );
+            string label_fim = gera_label( "fim_while" );
+
+            string condicao = gera_nome_var_temp ( "b" );
+            //condicao.c = label_inicio + ":;\n" + $2.c + "  " +
+
+            $$.c =  label_inicio + ":;\n" + $2.c + condicao + " = !" + $2.v + ";\n" +
+                    "if ( " + condicao + " ) goto " + label_fim + ";\n" +
+                    $8.c +
                     + "goto " + label_inicio + ";\n" +
                     label_fim + ":;\n";
           }
@@ -455,7 +474,27 @@ CMD_DO_WHILE : TK_DO CMD TK_WHILE E
         ;
 
 
-CMD_FOR : TK_FOR NOME_VAR TK_ATRIB E TK_TO E TK_DO CMD
+CMD_FOR : TK_FOR NOME_VAR TK_ATRIB E TK_TO E TK_DO CMD_BLOCO
+          {
+            string var_fim = gera_nome_var_temp( $2.t.tipo_base );
+            string label_teste = gera_label( "teste_for" );
+            string label_fim = gera_label( "fim_for" );
+            string condicao = gera_nome_var_temp( "b" );
+
+            // Falta verificar os tipos... perde ponto se não o fizer.
+            $$.c =  $4.c + $6.c +
+                    "  " + $2.v + " = " + $4.v + ";\n" +
+                    "  " + var_fim + " = " + $6.v + ";\n" +
+                    label_teste + ":;\n" +
+                    "  " +condicao+" = "+$2.v + " > " + var_fim + ";\n" +
+                    "  " + "if( " + condicao + " ) goto " + label_fim +
+                    ";\n" +
+                    $8.c +
+                    "  " + $2.v + " = " + $2.v + " + 1;\n" +
+                    "  goto " + label_teste + ";\n" +
+                    label_fim + ":;\n";
+          }
+        | TK_FOR NOME_VAR TK_ATRIB E TK_TO E TK_DO CMD_ONELINE ';'
           {
             string var_fim = gera_nome_var_temp( $2.t.tipo_base );
             string label_teste = gera_label( "teste_for" );
@@ -477,25 +516,31 @@ CMD_FOR : TK_FOR NOME_VAR TK_ATRIB E TK_TO E TK_DO CMD
           }
         ;
 
-CMD_IF : TK_IF E TK_THEN BLOCO CMD_ELSE
+CMD_IF : TK_IF E TK_THEN CMD_BLOCO CMD_ELSE
          { $$ = gera_codigo_if( $2, $4.c, $5.c ); }
-       | TK_IF E TK_THEN CMD_AUX ';' CMD_ELSE
+       | TK_IF E TK_THEN CMD_ONELINE ';' CMD_ELSE
          { $$ = gera_codigo_if( $2, $4.c, $6.c ); }
        ;
 
-CMD_ELSE : TK_ELSE CMD_AUX ';'
+CMD_ELSE : TK_ELSE CMD_ONELINE ';'
            { $$.c = $2.c; cerr << "aqui" << endl; }
-         | TK_ELSE BLOCO
+         | TK_ELSE CMD_BLOCO
            { $$.c = $2.c; }
          |
            { $$ = Atributos(); }
          ;
 
-WRITELN : TK_WRITELN E
+COMOPRINTA : TK_COMOPRINTA E
+          { $$.c = $2.c +
+                   "  cout << " + $2.v + ";\n";
+          }
+        | TK_COMOPRINTA E TK_NEWLINE
           { $$.c = $2.c +
                    "  cout << " + $2.v + ";\n"
                    "  cout << endl;\n";
           }
+        | TK_COMOPRINTA TK_NEWLINE
+          { $$.c = "  cout << endl;\n"; }
         ;
 
 ATRIB : TK_ID TK_ATRIB E
@@ -558,7 +603,7 @@ ATRIB : TK_ID TK_ATRIB E
         int m = tipoArray.tam[1];
 
         $$.c =  $3.c + $6.c + gera_teste_limite_array( $3.v, $6.v, tipoArray ) +
-                var1 + " = " + $3.v + " * " + to_string(m) + ";\n" +
+                var1 + " = " + $3.v + " * " + toString(m) + ";\n" +
                 var2 + " = " + var1 + " + " + $6.v + ";\n" +
                 $1.v + "[" + var2 + "] = " + $9.v + ";\n";
 
@@ -657,7 +702,7 @@ F : TK_CINT
       int m = tipoArray.tam[1];
 
       $$.c =  $3.c + $6.c + gera_teste_limite_array( $3.v, $6.v, tipoArray ) +
-              var1 + " = " + $3.v + " * " + to_string(m) + ";\n" +
+              var1 + " = " + $3.v + " * " + toString(m) + ";\n" +
               var2 + " = " + var1 + " + " + $6.v + ";\n" +
               $$.v + " = " + $1.v + "[" + var2 + "];\n";
     }
@@ -745,8 +790,8 @@ void inicializa_operadores() {
   tipo_opr["c+s"] = "s";
   tipo_opr["s+c"] = "s";
   tipo_opr["c+c"] = "s";
-  tipo_opr["s+d"] = "s";
-  tipo_opr["d+s"] = "s";
+  tipo_opr["s+i"] = "s";
+  tipo_opr["i+s"] = "s";
 
   // Resultados para o operador "-"
   tipo_opr["i-i"] = "i";
@@ -919,27 +964,20 @@ Tipo tipo_resultado( Tipo t1, string opr, Tipo t3 ) {
 
     return Tipo( aux );
   }
-  else { // Testes para os operadores de comparacao de array
-    if ( t1.ndim == 0 && t3.ndim == 1 ) {
-
-      if ( opr == "in" ) {
-        if ( t1.tipo_base == t3.tipo_base )
-          return Tipo( "b" );
-        else
-          erro( "O operador in não está definido para o tipo '" + t1.tipo_base
-                + "' e array de '" + t3.tipo_base + "'." );
-      }
-    } else if ( t1.ndim == 1 && t3.ndim == 1 ) {
-      if ( opr == "==" ) {
+  else if ( t1.ndim == 0 && t3.ndim == 1 ) {
+    if ( opr == "in" ) {
+      if ( t1.tipo_base == t3.tipo_base )
         return Tipo( "b" );
-      }
-      else if ( opr == "!=" ) {
-        return Tipo( "b" );
-      }
-
+      else
+        erro( "O operador in não está definido para o tipo '" + t1.tipo_base
+              + "' e array de '" + t3.tipo_base + "'." );
     }
-    return Tipo();
+  } else if ( t1.ndim == 1 && t3.ndim == 1 ) {
+    if ( opr == "==" || opr == "!=" ) {
+      return Tipo( "b" );
+    }
   }
+  return Tipo();
 }
 
 Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
@@ -991,10 +1029,11 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
         ss.c = s1.c + s3.c + "  " + ss.v + " = " + (opr == "==" ? "0" : "1") + ";\n";
         return ss;
       }
+    } else if ( opr == "+" ) {
+       // concatenação de arrays.
     }
   }
 
-  // verificar tipos !!!
   // tratar strings separadamente !!!
   if ( opr == "in" ) {
     string label_inicio = gera_label( "inicio_for" );
@@ -1040,9 +1079,33 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
       ss.c = temp.c +
              "  " + ss.v + " = " + temp.v + " " + opr + " 0;\n";
     }
-  } else if( s1.t.tipo_base == "s" && s3.t.tipo_base == "c" )
+  } else if ( ( s1.t.tipo_base == "s" && s3.t.tipo_base == "i" ) ||
+              ( s1.t.tipo_base == "i" && s3.t.tipo_base == "s" ) ) {
+    if ( opr == "+" ) {
+      string str_aux = gera_nome_var_temp( "s" );
+
+      // caso s3 seja int
+      string sto_string = s3.v;
+      string s1v = s1.v;
+      string s3v = str_aux;
+      if ( s1.t.tipo_base == "i" ) {
+        sto_string = s1.v;
+        s1v = str_aux;
+        s3v = s3.v;
+      }
+
+      ss.c = s1.c + s3.c +
+             "  sprintf( " + str_aux + ", \"%d\", " + sto_string + " );\n" +
+             "  strncpy( " + ss.v + ", " + s1v + ", 256 );\n" +
+             "  strncat( " + ss.v + ", " + s3v + ", 256 );\n";
+
+      return ss;
+    }
+
+
+  } else if ( s1.t.tipo_base == "s" && s3.t.tipo_base == "c" )
     ;
-  else if( s1.t.tipo_base == "c" && s3.t.tipo_base == "s" )
+  else if ( s1.t.tipo_base == "c" && s3.t.tipo_base == "s" )
     ;
   else {
     ss.c = s1.c + s3.c +
@@ -1072,7 +1135,6 @@ Atributos gera_codigo_if( Atributos expr, string cmd_then, string cmd_else ) {
 
 
 string traduz_nome_tipo_lula( string tipo_pascal ) {
-  // No caso do Pascal, a comparacao deveria ser case-insensitive
 
   if( tipo_pascal == "Integer" )
     return "i";
