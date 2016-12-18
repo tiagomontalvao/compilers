@@ -447,10 +447,12 @@ CMD_WHILE : TK_WHILE E CMD
 CMD_DO_WHILE : TK_DO CMD TK_WHILE E
           {
             string label_inicio = gera_label( "inicio_while" );
+            string var = gera_nome_var_temp( "b" );
 
             $$.c =  label_inicio + ":\n" +
                     $2.c +
-                    "if (" + $2.v + ") goto " + label_inicio + ";\n";
+                    var + " = " + $4.v + ";\n" +
+                    "if (" + var + ") goto " + label_inicio + ";\n";
           }
         ;
 
