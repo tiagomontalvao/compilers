@@ -2,14 +2,15 @@ Que Deus tenha misericórdia desta nação.
 
 Políticos
 	1. seed é integro;
-	2. a é delação de [3][4] corruptos;
-	3. b é delação de [4][2] corruptos;
-	4. c é delação de [3][2] corruptos;
+	2. a é delação de [3][4] integros;
+	3. b é delação de [4][2] integros;
+	4. c é delação de [3][2] integros;
 	5. i é integro;
 	6. j é integro;
 	7. k é integro;
+	8. aux é integro;
 
-PEC de integros pseudo_random;
+PEC de integros pseudo_random();
 Políticos
 	1. aux é integro;
 Príncipe
@@ -20,8 +21,24 @@ Príncipe
 
 Suíço;
 
-PEC de vento multiplica( a : delação de [3][4] corruptos; b : delação de [4][2] corruptos;
-						 integros lin_a, col_a, lin_b, col_b; c : delação de [3][2] corruptos );
+
+PEC de vento imprime( m : delação de [3][4] integros; integros l, c );
+Políticos
+	1. i é integro;
+	2. j é integro;
+Príncipe
+	
+	For i recebe 0 To l-1 Do {
+		For j recebe 0 To c-1 Do {
+			Como printa, deputado? m[i][j];
+			Como printa, deputado? ' \t';
+		}
+		Como printa, deputado? +n;
+	}
+Suíço;
+
+PEC de vento multiplica( a : delação de [3][4] integros; b : delação de [4][2] integros;
+						 integros lin_a, col_a, lin_b, col_b; c : delação de [3][2] integros );
 
 Políticos
 	1. i é integro;
@@ -34,6 +51,8 @@ Príncipe
 		exit;
 	}
 
+	imprime ( a, 3, 4 );
+
 	For i recebe 0 To lin_a-1 Do {
 		For j recebe 0 To col_b-1 Do {
 			c[i][j] recebe 0;
@@ -45,36 +64,22 @@ Príncipe
 Suíço;
 
 
-PEC de vento imprime( m : delação de [3][2] corruptos; integros l, c );
-Políticos
-	1. i é integro;
-	2. j é integro;
-Príncipe
-	
-	For i recebe 0 To l-1 Do {
-		Como printa, deputado? +n;
-		For j recebe 0 To c-1 Do {
-			Como printa, deputado? m[i][j];
-			Como printa, deputado? ' \t';
-		}
-	}
-Suíço;
 
 Príncipe
 	seed recebe 5323;
 	For i recebe 0 To 2 Do {
 		For j recebe 0 To 3 Do {
-			a[i][j] recebe (pseudo_random() mod 10);
+			a[i][j] recebe (pseudo_random());
+			aux recebe a[i][j];
+			Como printa, deputado? aux + ' ' + a[i][j] +n;
 		}
 	}
 	For i recebe 0 To 3 Do {
 		For j recebe 0 To 1 Do {
-			b[i][j] recebe (pseudo_random() mod 10);
+			b[i][j] recebe pseudo_random() mod 10;
 		}
 	}
-    multiplica( a, b, 3, 4, 4, 2, c );
 
-    imprime( c, 3, 2 );
-    imprime( c, 3, 3 );
+    imprime( a, 3, 4 );
 
 Suíço.

@@ -216,7 +216,7 @@ CABECALHO : TK_FUNCTION TK_DE TK_ID TK_ID OPC_PARAM
 
 OPC_PARAM : TK_ABREP PARAMS TK_FECHAP
             { $$ = $2; }
-          |
+          | TK_ABREP TK_FECHAP
             { $$ = Atributos(); }
           ;
 
@@ -391,25 +391,27 @@ CMD_BLOCO : BLOCO
 
 FUNCTION_CALL : TK_ID TK_ABREP EXPRSL TK_FECHAP
                 {
-                  cerr << "aqui" << endl;
 
                   Tipo tipo_func = consulta_ts( $1.v );
 
                   if ( tipo_func.params.size() != $3.lista_str.size() )
                     erro( "Quantidade errada de parâmetros" );
 
-                  //Tipo tipo_func = ( $1.v );
+                  if ( tipo_func.retorno.size() == 0 )
+                    erro( "Função não tem valor de retorno." );
                   $$.t = tipo_func.retorno[0].tipo_base;
-
-                // Falta verificar o tipo da função e os parametros.
 
                   $$.c = $3.c + "  " + $1.v + "( ";
 
-                  for( int i = 0; i < $3.lista_str.size(); i++ ) {
+                  for( int i = 0; i < (int) $3.lista_str.size() - 1; i++ ) {
                     if ( $3.lista_tipo[i].tipo_base != tipo_func.params[i].tipo_base )
                       erro( "Parâmetro de tipo imcompatível" );
-                    $$.c += $3.lista_str[i] + (i == $3.lista_str.size() - 1 ? " );\n" : ", ");
+                    $$.c += $3.lista_str[i] + ", ";
                   }
+                  if ( $3.lista_str.size() > 0 )
+                    $$.c += $3.lista_str[$3.lista_str.size() - 1];
+                  $$.c += " );\n";
+
                 }
               ;
 
@@ -643,7 +645,7 @@ ATRIB : TK_ID TK_ATRIB E
           if( $6.t.ndim != 0 || $6.t.tipo_base != tipoArray.tipo_base )
             erro( "Valor de tipo diferente sendo atribuido ao vetor " + $1.v );
 
-          $$.c = $3.c + $6.c;
+          $$.c = $3.c + $6.c + gera_teste_limite_array( $3.v, tipoArray );
           if ( tipoArray.tipo_base == "s" ) {
             $$.c += "  strncpy( " + $1.v + " + " + $3.v + " * 256, " + $6.v + ", 256 );\n";
           } else {
@@ -673,7 +675,7 @@ ATRIB : TK_ID TK_ATRIB E
 
         int m = tipoArray.tam[1];
 
-        $$.c =  $3.c + $6.c + gera_teste_limite_array( $3.v, $6.v, tipoArray ) +
+        $$.c =  $3.c + $6.c + $9.c + gera_teste_limite_array( $3.v, $6.v, tipoArray ) +
                 var1 + " = " + $3.v + " * " + toString(m) + ";\n" +
                 var2 + " = " + var1 + " + " + $6.v + ";\n" +
                 $1.v + "[" + var2 + "] = " + $9.v + ";\n";
@@ -714,6 +716,7 @@ E : E TK_MAIS E
   | TK_ABREP E TK_FECHAP
     { $$ = $2; }
   | F
+    { $$ = $1; }
   ;
 
 F : TK_CINT
@@ -786,19 +789,24 @@ F : TK_CINT
       if ( tipo_func.params.size() != $3.lista_str.size() )
         erro( "Quantidade errada de parâmetros" );
 
-      //Tipo tipo_func = ( $1.v );
+      if ( tipo_func.retorno.size() == 0 )
+        erro( "Função não tem valor de retorno." );
       $$.t = tipo_func.retorno[0].tipo_base;
-
-    // Falta verificar o tipo da função e os parametros.
 
       $$.v = gera_nome_var_temp( $$.t.tipo_base );
       $$.c = $3.c + "  " + $$.v + " = " + $1.v + "( ";
 
-      for( int i = 0; i < $3.lista_str.size(); i++ ) {
+      for( int i = 0; i < (int) $3.lista_str.size() - 1; i++ ) {
         if ( $3.lista_tipo[i].tipo_base != tipo_func.params[i].tipo_base )
           erro( "Parâmetro de tipo imcompatível" );
-        $$.c += $3.lista_str[i] + (i == $3.lista_str.size() - 1 ? " );\n" : ", ");
+        $$.c += $3.lista_str[i] + ", ";
       }
+      if ( $3.lista_str.size() > 0 )
+        $$.c += $3.lista_str[$3.lista_str.size() - 1];
+      $$.c += " );\n";
+
+      cerr << $$.v << endl;
+      cerr << $$.c << endl;
     }
   ;
 

@@ -23,8 +23,7 @@ Príncipe
 Suíço;
 
 Príncipe
-
-	a recebe 1 + 2*3 + 4;
+	v1[7] recebe 1;
 	Como printa, deputado? a +n;
 
 (*	
