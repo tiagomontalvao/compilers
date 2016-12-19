@@ -85,7 +85,7 @@ struct Atributos {
   string default_label; // Usado no switch-case.
   string default_code; // Usado no switch-case.
 
-  string nome_var_string; // Usado nas funções que retornam string
+  string nome_da_funcao; // Usado nas funções que retornam string
   Tipo tipo_var_string;  // Usado nas funções que retornam string
 
   Atributos() {} // Constutor vazio
@@ -242,7 +242,6 @@ FUNCTION :  { empilha_ts(); }  CABECALHO ';' CORPO { desempilha_ts(); } ';'
                   string b2 = "EH_VERAO_O_ANO_TODO;\n";
 
                   $4.c = a + b1 + b2 + c;
-                  cerr << ($4.c);
                 }
 
                 while (1) {
@@ -773,13 +772,12 @@ ATRIB : TK_ID TK_ATRIB E
         { // Falta verificar se pode atribuir (perde ponto se não fizer).
 
 
-          cerr << $3.v << endl;
-          if ( $3.nome_var_string != "" ) {
-            
-            Tipo tipo_s3 = consulta_ts( $3.v );
-            
-            $$.c = $3.c + "  strncpy( " + $1.v + ", " + $3.nome_var_string + ", 256 );\n";
-            
+          if ( $3.nome_da_funcao != "" ) {
+
+            Tipo tipo_s3 = consulta_ts( $3.nome_da_funcao );
+
+            $$.c = $3.c + "  strncpy( " + $1.v + ", " + $3.v + ", 256 );\n";
+
           } else {
 
             $1.t = consulta_ts( $1.v ) ;
@@ -984,12 +982,12 @@ F : TK_CINT
       if ( tipo_func.funcao_string ) {
 
         $$.t = tipo_func.retorno[0].tipo_base;
-        $$.t.funcao_string = true;        
+        $$.t.funcao_string = true;
         if ( tipo_func.params.size() != $3.lista_str.size() + 1 )
           erro( "Quantidade errada de parâmetros" );
 
-          $$.v = $1.v;
-          $$.nome_var_string = gera_nome_var_temp( "s" );
+          $$.nome_da_funcao = $1.v;
+          $$.v = gera_nome_var_temp( "s" );
           $$.c = $3.c + "  " + $1.v + "( ";
 
           for( int i = 0; i < (int) $3.lista_str.size() - 1; i++ ) {
@@ -999,7 +997,7 @@ F : TK_CINT
           }
           if ( $3.lista_str.size() > 0 )
             $$.c += $3.lista_str[$3.lista_str.size() - 1];
-          $$.c += ", " + $$.nome_var_string + " );\n";
+          $$.c += ", " + $$.v + " );\n";
       } else {
 
         if ( tipo_func.params.size() != $3.lista_str.size() )
@@ -1014,7 +1012,7 @@ F : TK_CINT
 
         if ( !tipo_void )
           $$.v = gera_nome_var_temp( $$.t.tipo_base );
-  
+
         $$.c = $3.c + "  ";
 
         if ( !tipo_void )
@@ -1307,12 +1305,21 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
 
   Atributos ss;
 
+  string s1_t_tipo_base = s1.t.tipo_base;
+  string s3_t_tipo_base = s3.t.tipo_base;
+
+  if (s1.t.tipo_base == "v" and s1.t.funcao_string) s1_t_tipo_base = "s";
+  if (s3.t.tipo_base == "v" and s3.t.funcao_string) s3_t_tipo_base = "s";
+
   ss.t = tipo_resultado( s1.t, opr, s3.t );
   ss.v = gera_nome_var_temp( ss.t.tipo_base );
 
+  cerr << s1_t_tipo_base << " | " << s1.v << endl;
+  cerr << s3_t_tipo_base << " | " << s3.v << endl;
+
   if ( s1.t.ndim == 1 && s3.t.ndim == 1) {
     if ( opr == "==" || opr == "!" ) {
-      if ( ( s1.t.tipo_base == s3.t.tipo_base ) && ( s1.t.tam[0] == s3.t.tam[0] ) ){
+      if ( ( s1_t_tipo_base == s3_t_tipo_base ) && ( s1.t.tam[0] == s3.t.tam[0] ) ){
 
           string label_inicio = gera_label( "inicio_for" );
           string label_fim = gera_label( "fim_for" );
@@ -1322,8 +1329,8 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
           string condicao_if = gera_nome_var_temp( "b" );
 
           string ind_for = gera_nome_var_temp( "i" );
-          string temp_1 = gera_nome_var_temp( s1.t.tipo_base );
-          string temp_2 = gera_nome_var_temp( s3.t.tipo_base );
+          string temp_1 = gera_nome_var_temp( s1_t_tipo_base );
+          string temp_2 = gera_nome_var_temp( s3_t_tipo_base );
 
           string init = opr == "==" ? "1" : "0";
           string compare = opr == "==" ? "!=" : "==";
@@ -1367,7 +1374,7 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
     string condicao_if = gera_nome_var_temp( "b" );
 
     string ind_for = gera_nome_var_temp( "i" );
-    string var_temp_aux = gera_nome_var_temp( s1.t.tipo_base );
+    string var_temp_aux = gera_nome_var_temp( s1_t_tipo_base );
 
     ss.c =  s1.c + s3.c +
             "  " + ss.v + " = 0;\n" +
@@ -1387,7 +1394,7 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
             label_fim + ":;\n";
             return ss;
   }
-  if( s1.t.tipo_base == "s" && s3.t.tipo_base == "s" ) {
+  if( s1_t_tipo_base == "s" && s3_t_tipo_base == "s" ) {
     if ( opr == "+" ) {
       ss.c = s1.c + s3.c +
              "  strncpy( " + ss.v + ", " + s1.v + ", 256 );\n" +
@@ -1402,8 +1409,8 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
       ss.c = temp.c +
              "  " + ss.v + " = " + temp.v + " " + opr + " 0;\n";
     }
-  } else if ( ( s1.t.tipo_base == "s" && s3.t.tipo_base == "i" ) ||
-              ( s1.t.tipo_base == "i" && s3.t.tipo_base == "s" ) ) {
+  } else if ( ( s1_t_tipo_base == "s" && s3_t_tipo_base == "i" ) ||
+              ( s1_t_tipo_base == "i" && s3_t_tipo_base == "s" ) ) {
     if ( opr == "+" ) {
       string str_aux = gera_nome_var_temp( "s" );
 
@@ -1411,7 +1418,7 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
       string sto_string = s3.v;
       string s1v = s1.v;
       string s3v = str_aux;
-      if ( s1.t.tipo_base == "i" ) {
+      if ( s1_t_tipo_base == "i" ) {
         sto_string = s1.v;
         s1v = str_aux;
         s3v = s3.v;
@@ -1426,8 +1433,8 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
     }
 
 
-  } else if ( ( s1.t.tipo_base == "s" && s3.t.tipo_base == "d" ) ||
-              ( s1.t.tipo_base == "d" && s3.t.tipo_base == "s" ) ) {
+  } else if ( ( s1_t_tipo_base == "s" && s3_t_tipo_base == "d" ) ||
+              ( s1_t_tipo_base == "d" && s3_t_tipo_base == "s" ) ) {
     if ( opr == "+" ) {
       string str_aux = gera_nome_var_temp( "s" );
 
@@ -1435,7 +1442,7 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
       string sto_string = s3.v;
       string s1v = s1.v;
       string s3v = str_aux;
-      if ( s1.t.tipo_base == "d" ) {
+      if ( s1_t_tipo_base == "d" ) {
         sto_string = s1.v;
         s1v = str_aux;
         s3v = s3.v;
@@ -1450,9 +1457,9 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
     }
 
 
-  } else if ( s1.t.tipo_base == "s" && s3.t.tipo_base == "c" )
+  } else if ( s1_t_tipo_base == "s" && s3_t_tipo_base == "c" )
     ;
-  else if ( s1.t.tipo_base == "c" && s3.t.tipo_base == "s" )
+  else if ( s1_t_tipo_base == "c" && s3_t_tipo_base == "s" )
     ;
   else {
     ss.c = s1.c + s3.c +
