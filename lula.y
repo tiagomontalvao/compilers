@@ -34,18 +34,21 @@ struct Tipo {
   // 2) Para ser genérico. Algumas linguagens permitem mais de um valor
   //    de retorno.
   vector<Tipo> params;
+  bool funcao_string;
 
   Tipo() {} // Construtor Vazio
 
-  Tipo( string tipo ) {
+  Tipo( string tipo) {
     tipo_base = tipo;
     ndim = BASICO;
+    funcao_string = false;
   }
 
   Tipo( string base, int tam ) {
     tipo_base = base;
     ndim = VETOR;
     this->tam[0] = tam;
+    funcao_string = false;
   }
 
   Tipo( string base, int tam_0, int tam_1 ) {
@@ -53,12 +56,21 @@ struct Tipo {
     ndim = MATRIZ;
     this->tam[0] = tam_0;
     this->tam[1] = tam_1;
+    funcao_string = false;
   }
 
   Tipo( Tipo retorno, vector<Tipo> params ) {
     ndim = FUNCAO;
     this->retorno.push_back( retorno );
     this->params = params;
+    funcao_string = false;
+  }
+
+  Tipo( Tipo retorno, vector<Tipo> params, bool funcao_string ) {
+    ndim = FUNCAO;
+    this->retorno.push_back( retorno );
+    this->params = params;
+    this->funcao_string = funcao_string;
   }
 };
 
@@ -73,6 +85,9 @@ struct Atributos {
   string default_label; // Usado no switch-case.
   string default_code; // Usado no switch-case.
 
+  string nome_funcao_string;  // Usado nas funções que retornam string
+  Tipo tipo_funcao_string;  // Usado nas funções que retornam string
+
   Atributos() {} // Constutor vazio
   Atributos( string valor ) {
     v = valor;
@@ -86,7 +101,7 @@ struct Atributos {
 
 // Declarar todas as funções que serão usadas.
 void insere_var_ts( string nome_var, Tipo tipo );
-void insere_funcao_ts( string nome_func, Tipo retorno, vector<Tipo> params );
+void insere_funcao_ts( string nome_func, Tipo retorno, vector<Tipo> params, bool funcao_string );
 Tipo consulta_ts( string nome_var );
 string declara_variavel( string nome, Tipo tipo );
 string declara_funcao( string nome, Tipo retorno,
@@ -209,8 +224,18 @@ FUNCTION :  { empilha_ts(); }  CABECALHO ';' CORPO { desempilha_ts(); } ';'
 CABECALHO : TK_FUNCTION TK_DE TK_ID TK_ID OPC_PARAM
             {
               Tipo tipo( traduz_nome_tipo_lula( $3.v ) );
+
+              bool funcao_string = false;
+
+              if ( tipo.tipo_base == "s" ) {
+                tipo = Tipo( "v" );
+                funcao_string = true;
+                $5.lista_str.push_back( "bambam_retorno_string" );
+                $5.lista_tipo.push_back( Tipo( "s" ) );
+              }
+
               $$.c = declara_funcao( $4.v, tipo, $5.lista_str, $5.lista_tipo );
-              insere_funcao_ts( $4.v, tipo, $5.lista_tipo ) ;
+              insere_funcao_ts( $4.v, tipo, $5.lista_tipo, funcao_string ) ;
             }
           ;
 
@@ -417,7 +442,7 @@ CMD_ONELINE : COMOPRINTA
             | CMD_WATCH
             | RETURN
             | EXIT
-            | FUNCTION_CALL
+            | E
             ;
 
 CMD_BLOCO : BLOCO
@@ -427,33 +452,6 @@ CMD_BLOCO : BLOCO
           | CMD_DO_WHILE
           | CMD_SWITCH
           ;
-
-FUNCTION_CALL : TK_ID TK_ABREP EXPRSL TK_FECHAP
-                {
-                  cerr << "aqui" << endl;
-
-                  Tipo tipo_func = consulta_ts( $1.v );
-
-                  if ( tipo_func.params.size() != $3.lista_str.size() )
-                    erro( "Quantidade errada de parâmetros" );
-
-                  //Tipo tipo_func = ( $1.v );
-                  $$.t = tipo_func.retorno[0].tipo_base;
-
-                // Falta verificar o tipo da função e os parametros.
-                if ($1.t.tipo_base == "s") {
-                }
-                  erro ("ufa");
-
-                  $$.c = $3.c + "  " + $1.v + "( ";
-
-                  for( int i = 0; i < $3.lista_str.size(); i++ ) {
-                    if ( $3.lista_tipo[i].tipo_base != tipo_func.params[i].tipo_base )
-                      erro( "Parâmetro de tipo incompatível" );
-                    $$.c += $3.lista_str[i] + (i == $3.lista_str.size() - 1 ? " );\n" : ", ");
-                  }
-                }
-              ;
 
 CMD_WATCH : TK_WATCH TK_ID
           {
@@ -725,14 +723,23 @@ COMOPRINTA : TK_COMOPRINTA E
           { $$.c = "  cout << endl;\n"; }
         ;
 
-ATRIB : TK_ID TK_ATRIB E
+ATRIB : TK_ID TK_ATRIB FUNCTION_CALL
+        {
+          Tipo tipo_s3 = consulta_ts( $3.v );
+
+          if ( tipo_s3.funcao_string ) {
+            $$.c = $3.c + "  strncpy( " + $1.v + ", " + $3.nome_funcao_string + ", 256 );\n";
+          }
+        }
+        | TK_ID TK_ATRIB E
         { // Falta verificar se pode atribuir (perde ponto se não fizer).
+
           $1.t = consulta_ts( $1.v ) ;
 
           if(( $1.t.tipo_base == "i" and $3.t.tipo_base == "d" ) or ( $1.t.tipo_base == "d" and $3.t.tipo_base == "i" )) {
             // Pior tratamento de erro que já fiz na minha vida.
           } else if( $1.t.tipo_base != $3.t.tipo_base )
-            erro( "Tipos incompatíveis na atribuição" );
+            erro( "Tipos incompatíveis na atribuição " + $1.t.tipo_base + ", " +  $3.t.tipo_base + " " );
 
           if( $1.t.tipo_base == "s" )
             $$.c = $3.c + "  strncpy( " + $1.v + ", " + $3.v + ", 256 );\n";
@@ -740,6 +747,8 @@ ATRIB : TK_ID TK_ATRIB E
             $$.c = $3.c + "  " + $1.v + " = " + $3.v + ";\n";
 
           debug( "ATRIB : TK_ID TK_ATRIB E ';'", $$ );
+
+
         }
       | TK_ID '[' E ']' TK_ATRIB E
         { // Falta testar: tipo, limite do array, e se a variável existe
@@ -798,7 +807,7 @@ E : E TK_MAIS E
     { $$ = gera_codigo_operador( $1, "+", $3 ); }
   | E TK_MENOS E
     { $$ = gera_codigo_operador( $1, "-", $3 ); }
-  | TK_MENOS E %prec  TK_MULT
+  | TK_MENOS E %prec TK_MULT
     { $$ = gera_codigo_operador( Atributos( "0", Tipo ("i") ), "-", $2 ); }
   | E TK_MULT E
     { $$ = gera_codigo_operador( $1, "*", $3 ); }
@@ -828,6 +837,8 @@ E : E TK_MAIS E
     { $$ = $2; }
   | F
   ;
+
+
 
 F : TK_CINT
     { $$.v = $1.v; $$.t = Tipo( "i" ); $$.c = $1.c; }
@@ -921,26 +932,60 @@ F : TK_CINT
     { $$.v = $1.v; $$.t = consulta_ts( $1.v ); $$.c = $1.c; }
   | TK_ID TK_ABREP EXPRSL TK_FECHAP
     {
+
+      /*
+        f( bla );
+
+        char var_temp[256];
+        f ( bla, var_temp );
+        strncpy ( x, var_temp, 256 ); 
+      */
+
       Tipo tipo_func = consulta_ts( $1.v );
 
-      if ( tipo_func.params.size() != $3.lista_str.size() )
-        erro( "Quantidade errada de parâmetros" );
+      if ( tipo_func.funcao_string ) {
 
-      //Tipo tipo_func = ( $1.v );
       $$.t = tipo_func.retorno[0].tipo_base;
+        if ( tipo_func.params.size() != $3.lista_str.size() + 1 )
+          erro( "Quantidade errada de parâmetros" );
 
-    // Falta verificar o tipo da função e os parametros.
+          $$.v = gera_nome_var_temp( "s" );
+          $$.c = $3.c + "  " + $1.v + "( ";
 
-      $$.v = gera_nome_var_temp( $$.t.tipo_base );
-      $$.c = $3.c + "  " + $$.v + " = " + $1.v + "( ";
+          for( int i = 0; i < (int) $3.lista_str.size() - 1; i++ ) {
+            if ( $3.lista_tipo[i].tipo_base != tipo_func.params[i].tipo_base )
+              erro( "Parâmetro de tipo imcompatível" );
+            $$.c += $3.lista_str[i] + ", ";
+          }
+          if ( $3.lista_str.size() > 0 )
+            $$.c += $3.lista_str[$3.lista_str.size() - 1];
+          $$.c += ", " + $$.v + " );\n";
+      } else {
 
-      for( int i = 0; i < $3.lista_str.size(); i++ ) {
-        if ( $3.lista_tipo[i].tipo_base != tipo_func.params[i].tipo_base )
-          erro( "Parâmetro de tipo imcompatível" );
-        $$.c += $3.lista_str[i] + (i == $3.lista_str.size() - 1 ? " );\n" : ", ");
+        if ( tipo_func.params.size() != $3.lista_str.size() )
+          erro( "Quantidade errada de parâmetros" );
+
+        if ( tipo_func.retorno.size() == 0 )
+          erro( "Função não tem valor de retorno." );
+
+        $$.t = tipo_func.retorno[0].tipo_base;
+
+        $$.v = gera_nome_var_temp( $$.t.tipo_base );
+        $$.c = $3.c + "  " + $$.v + " = " + $1.v + "( ";
+
+        for( int i = 0; i < (int) $3.lista_str.size() - 1; i++ ) {
+          if ( $3.lista_tipo[i].tipo_base != tipo_func.params[i].tipo_base )
+            erro( "Parâmetro de tipo imcompatível" );
+          $$.c += $3.lista_str[i] + ", ";
+        }
+        if ( $3.lista_str.size() > 0 )
+          $$.c += $3.lista_str[$3.lista_str.size() - 1];
+        $$.c += " );\n";
       }
     }
   ;
+
+
 
 EXPRSL  : EXPRS
           { $$ = $1; }
@@ -1129,11 +1174,11 @@ void insere_var_ts( string nome_var, Tipo tipo ) {
 }
 
 void insere_funcao_ts( string nome_func,
-                       Tipo retorno, vector<Tipo> params ) {
+                       Tipo retorno, vector<Tipo> params, bool funcao_string = false ) {
   if( ts[ts.size()-2].find( nome_func ) != ts[ts.size()-2].end() )
     erro( "Função já declarada: " + nome_func );
 
-  ts[ts.size()-2][ nome_func ] = Tipo( retorno, params );
+  ts[ts.size()-2][ nome_func ] = Tipo( retorno, params, funcao_string );
 }
 
 string toString( int n ) {
