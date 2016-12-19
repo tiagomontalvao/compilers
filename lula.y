@@ -151,6 +151,8 @@ string includes =
 %nonassoc TK_WHILE
 %nonassoc TK_DO
 %nonassoc TK_SWITCH
+%nonassoc TK_DA
+%nonassoc TK_ID
 
 %%
 
