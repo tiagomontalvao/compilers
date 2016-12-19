@@ -1,7 +1,7 @@
 DELIM   [\t ]
 LINHA   [\n]
 NUMERO  [0-9]
-LETRA   [A-Za-z_çÇãÃ]
+LETRA   [A-Za-z_]
 INT     {NUMERO}+
 DOUBLE  {NUMERO}+("."{NUMERO}+)?
 CHAR    ['][^\n'][']

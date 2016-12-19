@@ -149,6 +149,7 @@ string includes =
 %left TK_AND TK_OR TK_NOT TK_IN
 %left TK_MAIS TK_MENOS
 %left TK_MULT TK_DIV TK_MOD
+%right TK_ATRIB
 
 %nonassoc LOWER_THAN_ELSE
 %nonassoc TK_ELSE
@@ -156,7 +157,6 @@ string includes =
 %nonassoc TK_EXIT
 %nonassoc TK_COMOPRINTA
 %nonassoc TK_READ
-%nonassoc TK_ATRIB
 %nonassoc TK_WATCH
 %nonassoc TK_RETURN
 %nonassoc TK_BEGIN
@@ -221,7 +221,46 @@ EXIT : TK_EXIT
 
 FUNCTION :  { empilha_ts(); }  CABECALHO ';' CORPO { desempilha_ts(); } ';'
             {
-              $$.c = $2.c + " {\n" + $4.c + "}\n";
+              if ($2.t.funcao_string) {
+                while (1) {
+                  int idx;
+                  if ((idx = $4.c.find("return")) == string::npos) break;
+
+                  string a = $4.c.substr(0, idx);
+                  string b = $4.c.substr(idx, $4.c.substr(idx).find(';') + 1);
+                  string c = $4.c.substr(a.length() + b.length());
+
+                  string returned_value = "";
+
+                  for (int i = a.length() + 6; $4.c[i] != ';'; i++) {
+                    if ($4.c[i] != ' ' or $4.c[i] != '\t' or $4.c[i] != '\n') {
+                      returned_value.push_back($4.c[i]);
+                    }
+                  }
+
+                  string b1 = "strncpy(bambam_retorno_string, " + returned_value + ", 256);\n";
+                  string b2 = "EH_VERAO_O_ANO_TODO;\n";
+
+                  $4.c = a + b1 + b2 + c;
+                  cerr << ($4.c);
+                }
+
+                while (1) {
+                  int idx;
+                  if ((idx = $4.c.find("EH_VERAO_O_ANO_TODO")) == string::npos) break;
+
+                  string a = $4.c.substr(0, idx);
+                  string b = $4.c.substr(idx, $4.c.substr(idx).find(';') + 1);
+                  string c = $4.c.substr(a.length() + b.length());
+
+
+                  $4.c = a + "  return;\n" + c;
+                }
+
+                $$.c = $2.c + " {\n" + $4.c + "}\n";
+              } else {
+                $$.c = $2.c + " {\n" + $4.c + "}\n";
+              }
             }
          ;
 
@@ -238,6 +277,7 @@ CABECALHO : TK_FUNCTION TK_DE TK_ID TK_ID OPC_PARAM
                 $5.lista_tipo.push_back( Tipo( "s" ) );
               }
 
+              $$.t.funcao_string = funcao_string;
               $$.c = declara_funcao( $4.v, tipo, $5.lista_str, $5.lista_tipo );
               insere_funcao_ts( $4.v, tipo, $5.lista_tipo, funcao_string ) ;
             }
@@ -944,6 +984,7 @@ F : TK_CINT
       if ( tipo_func.funcao_string ) {
 
         $$.t = tipo_func.retorno[0].tipo_base;
+        $$.t.funcao_string = true;        
         if ( tipo_func.params.size() != $3.lista_str.size() + 1 )
           erro( "Quantidade errada de parâmetros" );
 
@@ -953,7 +994,7 @@ F : TK_CINT
 
           for( int i = 0; i < (int) $3.lista_str.size() - 1; i++ ) {
             if ( $3.lista_tipo[i].tipo_base != tipo_func.params[i].tipo_base )
-              erro( "Parâmetro de tipo imcompatível" );
+              erro( "Parâmetro de tipo incompatível" );
             $$.c += $3.lista_str[i] + ", ";
           }
           if ( $3.lista_str.size() > 0 )
@@ -1227,11 +1268,22 @@ string gera_label( string label ) {
 
 Tipo tipo_resultado( Tipo t1, string opr, Tipo t3 ) {
   if( t1.ndim == 0 && t3.ndim == 0 ) {
-    string aux = tipo_opr[ t1.tipo_base + opr + t3.tipo_base ];
+
+    string t1tipobase = t1.tipo_base;
+    string t3tipobase = t3.tipo_base;
+
+    if ( t1.funcao_string ) {
+      t1tipobase = "s";
+    }
+    if ( t3.funcao_string ) {
+      t3tipobase = "s";
+    }
+
+    string aux = tipo_opr[ t1tipobase + opr + t3tipobase ];
 
     if( aux == "" )
       erro( "O operador " + opr + " não está definido para os tipos '" +
-            t1.tipo_base + "' e '" + t3.tipo_base + "'.");
+            t1tipobase + "' e '" + t3tipobase + "'.");
 
     return Tipo( aux );
   }

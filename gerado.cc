@@ -7,19 +7,20 @@ using namespace std;
 
 int a;
 char str[256];
-int  soma(int a ) {
-int b;
+void  soma(int a, char bambam_retorno_string[256] ) {
   cout << "Função soma()";
   cout << endl;
-  return 1;
+  strncpy(bambam_retorno_string,  "x", 256);
+  return;
+
+
 }
 
 int main() { 
-int ti_1;
-  ti_1 = soma( 2 );
-  a = ti_1;
-  cout << a;
-  cout << endl;
+char ts_1[256];
+  soma( 1, ts_1 );
+  cout << soma;
+  cout << " vqefef";
   return 0;
 }
 

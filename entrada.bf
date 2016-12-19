@@ -4,16 +4,14 @@ Políticos
 	1. a é integro;
 	2. str é cadeia;
 
-PEC de integro soma( integro a );
-Políticos
-	1. b é integro;
+PEC de cadeia soma( integro a );
 Príncipe
 	Como printa, deputado? 'Função soma()' +n;
-	desvia 1;
-
+	desvia 'x';
 Suíço;
 
 Príncipe
-	a recebe soma( 2 );
-	Como printa, deputado? a +n;
+	Como printa, deputado? soma( 1 );
+	Como printa, deputado? ' ';
+	Como printa, deputado? soma( 1 );
 Suíço.
