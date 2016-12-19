@@ -192,7 +192,7 @@ DECL :  TK_VAR VARS
      ;
 
 RETURN  : TK_RETURN E
-          { $$.c = $2.c + 
+          { $$.c = $2.c +
                    "  return " + $2.v + ";\n"; }
         ;
 
@@ -242,11 +242,11 @@ PARAM : TK_ID IDS
         $$ = Atributos();
         $$.lista_str = $2.lista_str;
 
-        for( int i = 0; i < $2.lista_str.size(); i ++ )
+        for( int i = 0; i < $2.lista_str.size(); i++ )
           $$.lista_tipo.push_back( tipo );
       }
     | IDS ':' TK_ARRAY TK_DE '[' TK_CINT ']' TK_ID
-    // (a, b) : coligação de [10] inteiros 
+    // (a, b) : coligação de [10] inteiros
     // coligação de [10] inteiros (a, b)
       {
         Tipo tipo = Tipo( traduz_nome_tipo_lula( $8.v ),
@@ -407,6 +407,7 @@ FUNCTION_CALL : TK_ID TK_ABREP EXPRSL TK_FECHAP
                     if ( $3.lista_tipo[i].tipo_base != tipo_func.params[i].tipo_base )
                       erro( "Parâmetro de tipo imcompatível" );
                     $$.c += $3.lista_str[i] + ", ";
+
                   }
                   if ( $3.lista_str.size() > 0 )
                     $$.c += $3.lista_str[$3.lista_str.size() - 1];
@@ -430,7 +431,7 @@ CMD_SWITCH : TK_SWITCH TK_ABREP TK_ID TK_FECHAP SWITCH_BLOCO
              {
                $$.c = "";
                string fim_label = gera_label("fim_switch");
- 
+
                 // Gerando as variáveis para comparação.
                 for (int i = $5.lista_str.size() - 1; i >= 0; i--) {
                     string var = gera_nome_var_temp( "b" );
@@ -438,25 +439,25 @@ CMD_SWITCH : TK_SWITCH TK_ABREP TK_ID TK_FECHAP SWITCH_BLOCO
                     $$.c += "if (" + var + ") goto " + $$.switch_labels[i] + ";\n";
                 }
                 $$.c += "\n";
- 
+
                 // Se houver default.
                 if ($5.default_label != "") {
                   $$.c += "goto " + $5.default_label + ";\n\n";
                 }
- 
+
                 // Para cada case.
                 for (int i = $5.lista_str.size() - 1; i >= 0; i--) {
                   $$.c += $5.switch_labels[i] + ":\n";
                   $$.c += $5.switch_code[i] + "\n";
                   if ($5.tem_break[i]) $$.c += "goto " + fim_label + ";\n";
                 }
- 
+
                 // Se houver default.
                 if ($5.default_label != "") {
                   $$.c += $5.default_label + ":\n";
                   $$.c += $5.default_code + "\n";
                 }
- 
+
                 // Marcador final.
                 $$.c += fim_label + ":\n";
              }
@@ -500,7 +501,7 @@ CMD_WHILE : TK_DA E TK_QUE TK_EU TK_TE TK_DOU TK_OUTRA CMD_ONELINE ';'
             {
               string label_inicio = gera_label( "inicio_while" );
               string label_fim = gera_label( "fim_while" );
-  
+
               string condicao = gera_nome_var_temp ( "b" );
               //condicao.c = label_inicio + ":;\n" + $2.c + "  " +
 
@@ -620,7 +621,9 @@ ATRIB : TK_ID TK_ATRIB E
         { // Falta verificar se pode atribuir (perde ponto se não fizer).
           $1.t = consulta_ts( $1.v ) ;
 
-          if( $1.t.tipo_base != $3.t.tipo_base )
+          if(( $1.t.tipo_base == "i" and $3.t.tipo_base == "d" ) or ( $1.t.tipo_base == "d" and $3.t.tipo_base == "i" )) {
+            // Pior tratamento de erro que já fiz na minha vida.
+          } else if( $1.t.tipo_base != $3.t.tipo_base )
             erro( "Tipos incompatíveis na atribuição" );
 
           if( $1.t.tipo_base == "s" )
