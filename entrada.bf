@@ -2,7 +2,7 @@ Que Deus tenha misericórdia desta nação.
 
 Políticos
 	1. a é integro;
-	2. b é integro;
+	2. b é corrupto;
 	3. i é integro;
 	4. str1 é cadeia;
 	5. str2 é cadeia;
@@ -15,18 +15,19 @@ Políticos
 PEC de vento soma( integro c; integro d );
 Políticos
 	1. a é integro;
-	2. b é integro;
 Príncipe
-	a recebe 3;
-	b recebe 4;
+	a recebe 1;
 	Como printa, deputado? 'Função soma()' +n;
 Suíço;
 
 Príncipe
-	v1[4] recebe 1;
-	Como printa, deputado? a +n;
+	a recebe 2;
+	b recebe 2.5;
+	soma( 1, 2 );
+	Como printa, deputado? a + b +n;
+	Como printa, deputado? a + '  ' + b +n;
 
-(*	
+	
 	str1 recebe 'como vota';
 	str2 recebe 'deputado?';
 
@@ -134,6 +135,6 @@ Príncipe
 		Como printa, deputado? 'else: b:';
 		Como printa, deputado? b;
 	}
-*)
+
 
 Suíço.

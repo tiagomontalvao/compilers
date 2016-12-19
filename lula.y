@@ -867,6 +867,8 @@ void inicializa_operadores() {
   tipo_opr["c+c"] = "s";
   tipo_opr["s+i"] = "s";
   tipo_opr["i+s"] = "s";
+  tipo_opr["s+d"] = "s";
+  tipo_opr["d+s"] = "s";
 
   // Resultados para o operador "-"
   tipo_opr["i-i"] = "i";
@@ -1173,6 +1175,30 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
 
       ss.c = s1.c + s3.c +
              "  sprintf( " + str_aux + ", \"%d\", " + sto_string + " );\n" +
+             "  strncpy( " + ss.v + ", " + s1v + ", 256 );\n" +
+             "  strncat( " + ss.v + ", " + s3v + ", 256 );\n";
+
+      return ss;
+    }
+
+
+  } else if ( ( s1.t.tipo_base == "s" && s3.t.tipo_base == "d" ) ||
+              ( s1.t.tipo_base == "d" && s3.t.tipo_base == "s" ) ) {
+    if ( opr == "+" ) {
+      string str_aux = gera_nome_var_temp( "s" );
+
+      // caso s3 seja int
+      string sto_string = s3.v;
+      string s1v = s1.v;
+      string s3v = str_aux;
+      if ( s1.t.tipo_base == "d" ) {
+        sto_string = s1.v;
+        s1v = str_aux;
+        s3v = s3.v;
+      }
+
+      ss.c = s1.c + s3.c +
+             "  sprintf( " + str_aux + ", \"%lf\", " + sto_string + " );\n" +
              "  strncpy( " + ss.v + ", " + s1v + ", 256 );\n" +
              "  strncat( " + ss.v + ", " + s3v + ", 256 );\n";
 

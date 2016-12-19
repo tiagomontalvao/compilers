@@ -31,7 +31,3 @@ concatstring: concatstring.bf
 
 clean:
 	rm y.tab.c lula lex.yy.c y.output
-
-.PHONY:
-	mdc multmatriz concatstring clean
-
