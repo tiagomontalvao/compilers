@@ -1,18 +1,10 @@
 Que Deus tenha misericórdia desta nação.
 
-Políticos
-	1. a é integro;
-
+PEC de cadeia f(integro a);
 Príncipe
 	a recebe 10;
-	Mas o que é isso aqui? a;
+Suíço;
 
-	Delação premiada(a) {
-		caso 1:
-			Como printa, deputado? '1';
-			Bessias;
-		caso 10:
-			Como printa, deputado? '1';
-			Bessias;
-	}
+Príncipe
+	Como printa, deputado? 'heelo';
 Suíço.

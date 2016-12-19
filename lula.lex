@@ -32,8 +32,9 @@ COMMENT "(*"([^*]|"*"[^)])*"*)"
 "+n"  			{ yylval = Atributos( yytext ); return TK_NEWLINE; }
 "Mas o que é isso aqui?"  { yylval = Atributos( yytext ); return TK_WATCH; }
 "Leia" 			{ yylval = Atributos( yytext ); return TK_READ; }
-"se Deus quiser e"	{ yylval = Atributos( yytext ); return TK_IF; }
-"mas senão"     { yylval = Atributos( yytext ); return TK_ELSE; }
+"If"       		{ yylval = Atributos( yytext ); return TK_IF; }
+"Then"     		{ yylval = Atributos( yytext ); return TK_THEN; }
+"Else"     		{ yylval = Atributos( yytext ); return TK_ELSE; }
 "For"      		{ yylval = Atributos( yytext ); return TK_FOR; }
 "While"   		{ yylval = Atributos( yytext ); return TK_WHILE; }
 "Dá"      		{ yylval = Atributos( yytext ); return TK_DA; }
@@ -49,7 +50,6 @@ COMMENT "(*"([^*]|"*"[^)])*"*)"
 "To"       		{ yylval = Atributos( yytext ); return TK_TO; }
 "Do"       		{ yylval = Atributos( yytext ); return TK_DO; }
 "delação"    	{ yylval = Atributos( yytext ); return TK_ARRAY; }
-"delações"    	{ yylval = Atributos( yytext ); return TK_ARRAY; }
 "de"       		{ yylval = Atributos( yytext ); return TK_DE; }
 "PEC" 			{ yylval = Atributos( yytext ); return TK_FUNCTION; }
 "desvia" 		{ yylval = Atributos( yytext ); return TK_RETURN; }
