@@ -128,7 +128,7 @@ string includes =
 
 %token TK_ID TK_CINT TK_CDOUBLE TK_VAR TK_PROGRAM TK_BEGIN TK_END TK_ATRIB
 %token TK_COMOPRINTA TK_READ TK_CSTRING TK_FUNCTION TK_WATCH TK_NEWLINE
-%token TK_MOD TK_IGU TK_MENORQ TK_MAIORQ TK_MAIG TK_MEIG TK_DIF TK_IF TK_THEN TK_ELSE
+%token TK_MOD TK_IGU TK_MENORQ TK_MAIORQ TK_MAIG TK_MEIG TK_DIF TK_IF TK_ELSE
 %token TK_AND TK_OR TK_NOT TK_IN TK_ABREP TK_FECHAP TK_MAIS TK_MENOS TK_MULT TK_DIV
 %token TK_FOR TK_SWITCH TK_CASE TK_DEFAULT TK_BREAK TK_TO TK_DO TK_ARRAY TK_DE TK_IS
 %token TK_DA TK_QUE TK_EU TK_TE TK_DOU TK_OUTRA TK_WHILE TK_RETURN TK_EXIT
@@ -154,6 +154,8 @@ string includes =
 %nonassoc TK_WHILE
 %nonassoc TK_DO
 %nonassoc TK_SWITCH
+%nonassoc TK_DA
+%nonassoc TK_ID
 
 %%
 
@@ -185,7 +187,7 @@ DECL :  TK_VAR VARS
 
           for (int i = 0; i < $2.lista_str.size(); i++) {
             if (stoi($2.lista_str[i]) != count) {
-              erro ("Delação inconsistente. Depoimentos fora de ordem. Comece com 1, depois 2, 3, 4...");
+              erro ( "Delação inconsistente. Depoimentos fora de ordem. Comece com 1, depois 2, 3, 4..." );
               $$.c += $2.lista_str[i] + " ";
             }
             count++;
@@ -220,7 +222,6 @@ FUNCTION :  { empilha_ts(); }  CABECALHO ';' CORPO { desempilha_ts(); } ';'
 
                   code = code.substr(0, i - var.length() - 7);
                   code += "  strncat( str2fct, " + var + ", 256 );\n";
-                  code += "return str2fct;\n";
 
                   $$.c = $2.c + " {\n" + code + "}\n";
                 }
@@ -248,7 +249,7 @@ CABECALHO : TK_FUNCTION TK_DE TK_ID TK_ID OPC_PARAM
 
 OPC_PARAM : TK_ABREP PARAMS TK_FECHAP
             { $$ = $2; }
-          |
+          | TK_ABREP TK_FECHAP
             { $$ = Atributos(); }
           ;
 
@@ -277,28 +278,30 @@ PARAM : TK_ID IDS
         for( int i = 0; i < $2.lista_str.size(); i++ )
           $$.lista_tipo.push_back( tipo );
       }
-    | IDS ':' TK_ARRAY TK_DE '[' TK_CINT ']' TK_ID
+    //| IDS ':' TK_ARRAY TK_DE '[' TK_CINT ']' TK_ID
+    | TK_ARRAY TK_DE '[' TK_CINT ']' TK_ID IDS
     // (a, b) : coligação de [10] inteiros
     // coligação de [10] inteiros (a, b)
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_lula( $8.v ),
-                          toInt( $6.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $6.v ),
+                          toInt( $4.v ) );
 
         $$ = Atributos();
-        $$.lista_str = $1.lista_str;
+        $$.lista_str = $7.lista_str;
 
-        for( int i = 0; i < $1.lista_str.size(); i ++ )
+        for( int i = 0; i < $7.lista_str.size(); i ++ )
           $$.lista_tipo.push_back( tipo );
       }
-    | IDS ':' TK_ARRAY TK_DE '[' TK_CINT ']' '[' TK_CINT ']' TK_ID
+    //| IDS ':' TK_ARRAY TK_DE '[' TK_CINT ']' '[' TK_CINT ']' TK_ID
+    | TK_ARRAY TK_DE '[' TK_CINT ']' '[' TK_CINT ']' TK_ID IDS
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_lula( $11.v ),
-                          toInt( $6.v ), toInt( $9.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $9.v ),
+                          toInt( $4.v ), toInt( $7.v ) );
 
         $$ = Atributos();
-        $$.lista_str = $1.lista_str;
+        $$.lista_str = $10.lista_str;
 
-        for( int i = 0; i < $1.lista_str.size(); i ++ )
+        for( int i = 0; i < $10.lista_str.size(); i ++ )
           $$.lista_tipo.push_back( tipo );
       }
     ;
@@ -421,18 +424,6 @@ BLOCO : TK_BEGIN { var_temp.push_back( "" );} CMDS TK_END
           }
         }
       ;
-/*
-CMDS : CMD ';' CMDS
-       { $$.c = $1.c + $3.c; }
-     | CMD_IF CMDS
-       { $$.c = $1.c + $2.c; }
-     | CMD_FOR CMDS
-       { $$.c = $1.c + $2.c; }
-     | CMD_WHILE CMDS
-       { $$.c = $1.c + $2.c; }
-     | { $$.c = ""; }
-     ;
-*/
 
 CMDS : CMD_ONELINE ';' CMDS
        { $$.c = $1.c + $3.c; }
@@ -462,28 +453,28 @@ CMD_BLOCO : BLOCO
 
 FUNCTION_CALL : TK_ID TK_ABREP EXPRSL TK_FECHAP
                 {
-                  cerr << "aqui" << endl;
 
                   Tipo tipo_func = consulta_ts( $1.v );
 
                   if ( tipo_func.params.size() != $3.lista_str.size() )
                     erro( "Quantidade errada de parâmetros" );
 
-                  //Tipo tipo_func = ( $1.v );
+                  if ( tipo_func.retorno.size() == 0 )
+                    erro( "Função não tem valor de retorno." );
                   $$.t = tipo_func.retorno[0].tipo_base;
-
-                // Falta verificar o tipo da função e os parametros.
-                if ($1.t.tipo_base == "s") {
-                }
-                  erro ("ufa");
 
                   $$.c = $3.c + "  " + $1.v + "( ";
 
-                  for( int i = 0; i < $3.lista_str.size(); i++ ) {
+                  for( int i = 0; i < (int) $3.lista_str.size() - 1; i++ ) {
                     if ( $3.lista_tipo[i].tipo_base != tipo_func.params[i].tipo_base )
-                      erro( "Parâmetro de tipo incompatível" );
-                    $$.c += $3.lista_str[i] + (i == $3.lista_str.size() - 1 ? " );\n" : ", ");
+                      erro( "Parâmetro de tipo imcompatível" );
+                    $$.c += $3.lista_str[i] + ", ";
+
                   }
+                  if ( $3.lista_str.size() > 0 )
+                    $$.c += $3.lista_str[$3.lista_str.size() - 1];
+                  $$.c += " );\n";
+
                 }
               ;
 
@@ -559,7 +550,7 @@ SWITCH_BLOCO  : TK_CASE F ':' CMDS SWITCH_BLOCO
                 $$.default_label = gera_label("default_switch");
                 $$.default_code = $3.c;
               }
-              |
+              ;
 
 LEIA :  TK_READ IDS_LEIA
         {
@@ -730,10 +721,10 @@ CMD_FOR : TK_FOR NOME_VAR TK_ATRIB E TK_TO E TK_DO CMD_BLOCO
           }
         ;
 
-CMD_IF : TK_IF E TK_THEN CMD_BLOCO CMD_ELSE
-         { $$ = gera_codigo_if( $2, $4.c, $5.c ); }
-       | TK_IF E TK_THEN CMD_ONELINE ';' CMD_ELSE
-         { $$ = gera_codigo_if( $2, $4.c, $6.c ); }
+CMD_IF : TK_IF E CMD_BLOCO CMD_ELSE
+         { $$ = gera_codigo_if( $2, $3.c, $4.c ); }
+       | TK_IF E CMD_ONELINE ';' CMD_ELSE
+         { $$ = gera_codigo_if( $2, $3.c, $5.c ); }
        ;
 
 CMD_ELSE : TK_ELSE CMD_ONELINE ';'
@@ -788,7 +779,7 @@ ATRIB : TK_ID TK_ATRIB E
           if( $6.t.ndim != 0 || $6.t.tipo_base != tipoArray.tipo_base )
             erro( "Valor de tipo diferente sendo atribuido ao vetor " + $1.v );
 
-          $$.c = $3.c + $6.c;
+          $$.c = $3.c + $6.c + gera_teste_limite_array( $3.v, tipoArray );
           if ( tipoArray.tipo_base == "s" ) {
             $$.c += "  strncpy( " + $1.v + " + " + $3.v + " * 256, " + $6.v + ", 256 );\n";
           } else {
@@ -818,7 +809,7 @@ ATRIB : TK_ID TK_ATRIB E
 
         int m = tipoArray.tam[1];
 
-        $$.c =  $3.c + $6.c + gera_teste_limite_array( $3.v, $6.v, tipoArray ) +
+        $$.c =  $3.c + $6.c + $9.c + gera_teste_limite_array( $3.v, $6.v, tipoArray ) +
                 var1 + " = " + $3.v + " * " + toString(m) + ";\n" +
                 var2 + " = " + var1 + " + " + $6.v + ";\n" +
                 $1.v + "[" + var2 + "] = " + $9.v + ";\n";
@@ -859,6 +850,7 @@ E : E TK_MAIS E
   | TK_ABREP E TK_FECHAP
     { $$ = $2; }
   | F
+    { $$ = $1; }
   ;
 
 F : TK_CINT
@@ -958,19 +950,22 @@ F : TK_CINT
       if ( tipo_func.params.size() != $3.lista_str.size() )
         erro( "Quantidade errada de parâmetros" );
 
-      //Tipo tipo_func = ( $1.v );
+      if ( tipo_func.retorno.size() == 0 )
+        erro( "Função não tem valor de retorno." );
       $$.t = tipo_func.retorno[0].tipo_base;
-
-    // Falta verificar o tipo da função e os parametros.
 
       $$.v = gera_nome_var_temp( $$.t.tipo_base );
       $$.c = $3.c + "  " + $$.v + " = " + $1.v + "( ";
 
-      for( int i = 0; i < $3.lista_str.size(); i++ ) {
+      for( int i = 0; i < (int) $3.lista_str.size() - 1; i++ ) {
         if ( $3.lista_tipo[i].tipo_base != tipo_func.params[i].tipo_base )
           erro( "Parâmetro de tipo imcompatível" );
-        $$.c += $3.lista_str[i] + (i == $3.lista_str.size() - 1 ? " );\n" : ", ");
+        $$.c += $3.lista_str[i] + ", ";
       }
+      if ( $3.lista_str.size() > 0 )
+        $$.c += $3.lista_str[$3.lista_str.size() - 1];
+      $$.c += " );\n";
+
     }
   ;
 
