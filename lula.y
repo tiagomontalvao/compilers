@@ -274,28 +274,28 @@ PARAM : TK_ID IDS
         for( int i = 0; i < $2.lista_str.size(); i++ )
           $$.lista_tipo.push_back( tipo );
       }
-    | IDS ':' TK_ARRAY TK_DE '[' TK_CINT ']' TK_ID
+    | TK_ARRAY TK_DE '[' TK_CINT ']' TK_ID IDS
     // (a, b) : coligação de [10] inteiros
     // coligação de [10] inteiros (a, b)
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_lula( $8.v ),
-                          toInt( $6.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $6.v ),
+                          toInt( $4.v ) );
 
         $$ = Atributos();
-        $$.lista_str = $1.lista_str;
+        $$.lista_str = $7.lista_str;
 
-        for( int i = 0; i < $1.lista_str.size(); i ++ )
+        for( int i = 0; i < $7.lista_str.size(); i ++ )
           $$.lista_tipo.push_back( tipo );
       }
-    | IDS ':' TK_ARRAY TK_DE '[' TK_CINT ']' '[' TK_CINT ']' TK_ID
+    | TK_ARRAY TK_DE '[' TK_CINT ']' '[' TK_CINT ']' TK_ID IDS
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_lula( $11.v ),
-                          toInt( $6.v ), toInt( $9.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $9.v ),
+                          toInt( $4.v ), toInt( $7.v ) );
 
         $$ = Atributos();
-        $$.lista_str = $1.lista_str;
+        $$.lista_str = $10.lista_str;
 
-        for( int i = 0; i < $1.lista_str.size(); i ++ )
+        for( int i = 0; i < $10.lista_str.size(); i ++ )
           $$.lista_tipo.push_back( tipo );
       }
     ;
@@ -755,11 +755,6 @@ ATRIB : TK_ID TK_ATRIB E
               $$.c = $3.c + "  " + $1.v + " = " + $3.v + ";\n";
 
           }
-
-          
-
-
-
         }
       | TK_ID '[' E ']' TK_ATRIB E
         { // Falta testar: tipo, limite do array, e se a variável existe
@@ -776,7 +771,7 @@ ATRIB : TK_ID TK_ATRIB E
           if( $6.t.ndim != 0 || $6.t.tipo_base != tipoArray.tipo_base )
             erro( "Valor de tipo diferente sendo atribuido ao vetor " + $1.v );
 
-          $$.c = $3.c + $6.c;
+          $$.c = $3.c + $6.c + gera_teste_limite_array( $3.v, tipoArray );
           if ( tipoArray.tipo_base == "s" ) {
             $$.c += "  strncpy( " + $1.v + " + " + $3.v + " * 256, " + $6.v + ", 256 );\n";
           } else {
@@ -806,7 +801,7 @@ ATRIB : TK_ID TK_ATRIB E
 
         int m = tipoArray.tam[1];
 
-        $$.c =  $3.c + $6.c + gera_teste_limite_array( $3.v, $6.v, tipoArray ) +
+        $$.c =  $3.c + $6.c + $9.c + gera_teste_limite_array( $3.v, $6.v, tipoArray ) +
                 var1 + " = " + $3.v + " * " + toString(m) + ";\n" +
                 var2 + " = " + var1 + " + " + $6.v + ";\n" +
                 $1.v + "[" + var2 + "] = " + $9.v + ";\n";
@@ -847,6 +842,7 @@ E : E TK_MAIS E
   | TK_ABREP E TK_FECHAP
     { $$ = $2; }
   | F
+    { $$ = $1; }
   ;
 
 
@@ -943,14 +939,6 @@ F : TK_CINT
   | TK_ID TK_ABREP EXPRSL TK_FECHAP
     {
 
-      /*
-        f( bla );
-
-        char var_temp[256];
-        f ( bla, var_temp );
-        strncpy ( x, var_temp, 256 ); 
-      */
-
       Tipo tipo_func = consulta_ts( $1.v );
 
       if ( tipo_func.funcao_string ) {
@@ -981,8 +969,17 @@ F : TK_CINT
 
         $$.t = tipo_func.retorno[0].tipo_base;
 
-        $$.v = gera_nome_var_temp( $$.t.tipo_base );
-        $$.c = $3.c + "  " + $$.v + " = " + $1.v + "( ";
+        int tipo_void = $$.t.tipo_base == "v";
+
+        if ( !tipo_void )
+          $$.v = gera_nome_var_temp( $$.t.tipo_base );
+  
+        $$.c = $3.c + "  ";
+
+        if ( !tipo_void )
+          $$.c += $$.v + " = ";
+
+        $$.c += $1.v + "( ";
 
         for( int i = 0; i < (int) $3.lista_str.size() - 1; i++ ) {
           if ( $3.lista_tipo[i].tipo_base != tipo_func.params[i].tipo_base )

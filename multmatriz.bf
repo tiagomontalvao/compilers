@@ -8,8 +8,9 @@ Políticos
 	5. i é integro;
 	6. j é integro;
 	7. k é integro;
+	8. aux é integro;
 
-PEC de integros pseudo_random();
+PEC de integros pseudo_random;
 Políticos
 	1. aux é integro;
 Príncipe
@@ -43,7 +44,7 @@ Políticos
 	3. k é integro;
 Príncipe
 	
-	se Deus quiser e ( lin_b != col_a ) {
+	If ( lin_b != col_a ) Then {
 		Como printa, deputado? 'Matrizes incompativeis para multiplicação' +n  ;
 		exit;
 	}
@@ -65,6 +66,8 @@ Príncipe
 	For i recebe 0 To 2 Do {
 		For j recebe 0 To 3 Do {
 			a[i][j] recebe pseudo_random() mod 10;
+			aux recebe a[i][j];
+			Como printa, deputado? aux + ' ' + a[i][j] +n;
 		}
 	}
 	For i recebe 0 To 3 Do {
@@ -73,11 +76,7 @@ Príncipe
 		}
 	}
 
-	k recebe 2.5*2;
-	Como printa, deputado? k +n;
-
-
-	multiplica( a, b, 3, 3, 4, 2, c );
+	multiplica( a, b, 3, 4, 4, 2, c );
     imprime( c, 3, 2 );
     imprime( c, 3, 3 );
 

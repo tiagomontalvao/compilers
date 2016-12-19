@@ -6,9 +6,9 @@ Políticos
 
 PEC de integros mdc( integros a, b );
 Príncipe
-	se Deus quiser e b == 0
+	If b == 0 Then
 		desvia a;
-	mas senão
+	Else
 		desvia mdc(b, a mod b);
 Suíço;
 

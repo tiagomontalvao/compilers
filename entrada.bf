@@ -10,7 +10,7 @@ Políticos
 Príncipe
 	Como printa, deputado? 'Função soma()' +n;
 	desvia 1;
-	
+
 Suíço;
 
 Príncipe
