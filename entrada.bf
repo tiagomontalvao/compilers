@@ -12,7 +12,7 @@ Políticos
 
 (*PEC de integros soma( integro c; integro d );*)
 (*PEC de integros soma( c, d: integros );*)
-PEC de integros soma( integro c; integro d );
+PEC de vento soma( integro c; integro d );
 Políticos
 	1. a é integro;
 	2. b é integro;
@@ -20,17 +20,17 @@ Príncipe
 	a recebe 3;
 	b recebe 4;
 	Como printa, deputado? 'Função soma()' +n;
-	desvia a+b+c+d;
 Suíço;
 
 Príncipe
 
-	Como printa, deputado? soma(1, 2) +n;
+	a recebe 1 + 2*3 + 4;
+	Como printa, deputado? a +n;
 
+(*	
 	str1 recebe 'como vota';
 	str2 recebe 'deputado?';
 
-(*	
 	Como printa, deputado? 'str1 + 2 + str2: ' + str1 + ' ' + 2 + ' ' + str2 +n; 
 
 	a recebe 1;

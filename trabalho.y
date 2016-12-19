@@ -126,14 +126,31 @@ string includes =
 %token TK_ID TK_CINT TK_CDOUBLE TK_VAR TK_PROGRAM TK_BEGIN TK_END TK_ATRIB
 %token TK_COMOPRINTA TK_READ TK_CSTRING TK_FUNCTION TK_WATCH TK_NEWLINE
 %token TK_MOD TK_IGU TK_MENORQ TK_MAIORQ TK_MAIG TK_MEIG TK_DIF TK_IF TK_THEN TK_ELSE
-%token TK_AND TK_OR TK_NOT TK_IN TK_ABREP TK_FECHAP TK_MAIS TK_MENOS TK_MULT TK_DIV TK_REST
+%token TK_AND TK_OR TK_NOT TK_IN TK_ABREP TK_FECHAP TK_MAIS TK_MENOS TK_MULT TK_DIV
 %token TK_FOR TK_SWITCH TK_CASE TK_DEFAULT TK_BREAK TK_TO TK_DO TK_ARRAY TK_DE TK_IS
-%token TK_DA TK_QUE TK_EU TK_TE TK_DOU TK_OUTRA TK_WHILE TK_RETURN
+%token TK_DA TK_QUE TK_EU TK_TE TK_DOU TK_OUTRA TK_WHILE TK_RETURN TK_EXIT
 
 %nonassoc TK_MAIORQ TK_MENORQ TK_MAIG TK_MEIG TK_IGU TK_DIF
 %left TK_AND TK_OR TK_NOT TK_IN
 %left TK_MAIS TK_MENOS
-%left TK_MULT TK_DIV TK_REST TK_MOD
+%left TK_MULT TK_DIV TK_MOD
+
+%nonassoc LOWER_THAN_ELSE
+%nonassoc TK_ELSE
+
+%nonassoc LOWER_THAN_CMD
+%nonassoc TK_EXIT
+%nonassoc TK_COMOPRINTA
+%nonassoc TK_READ
+%nonassoc TK_ATRIB
+%nonassoc TK_WATCH
+%nonassoc TK_RETURN
+%nonassoc TK_BEGIN
+%nonassoc TK_IF
+%nonassoc TK_FOR
+%nonassoc TK_WHILE
+%nonassoc TK_DO
+%nonassoc TK_SWITCH
 
 %%
 
@@ -142,6 +159,8 @@ S : PROGRAM DECLS MAIN
       cout << includes << endl;
       cout << $2.c << endl;
       cout << $3.c << endl;
+      cerr << "Lula v.1.0.1 TM" << endl;
+      cerr << "Compilado com sucesso." << endl;
     }
   ;
 PROGRAM : TK_PROGRAM '.'
@@ -176,6 +195,10 @@ RETURN  : TK_RETURN E
           { $$.c = $2.c + 
                    "  return " + $2.v + ";\n"; }
         ;
+
+EXIT : TK_EXIT
+       { $$.c = "  exit(0);\n"; }
+     ;
 
 FUNCTION : { empilha_ts(); }  CABECALHO ';' CORPO { desempilha_ts(); } ';'
            { $$.c = $2.c + " {\n" + $4.c +
@@ -222,7 +245,9 @@ PARAM : TK_ID IDS
         for( int i = 0; i < $2.lista_str.size(); i ++ )
           $$.lista_tipo.push_back( tipo );
       }
-    | IDS ':' TK_ARRAY TK_DE '[' TK_CINT ']'  TK_ID
+    | IDS ':' TK_ARRAY TK_DE '[' TK_CINT ']' TK_ID
+    // (a, b) : coligação de [10] inteiros 
+    // coligação de [10] inteiros (a, b)
       {
         Tipo tipo = Tipo( traduz_nome_tipo_lula( $8.v ),
                           toInt( $6.v ) );
@@ -325,7 +350,7 @@ BLOCO : TK_BEGIN { var_temp.push_back( "" );} CMDS TK_END
           }
         }
       ;
-
+/*
 CMDS : CMD ';' CMDS
        { $$.c = $1.c + $3.c; }
      | CMD_IF CMDS
@@ -336,12 +361,24 @@ CMDS : CMD ';' CMDS
        { $$.c = $1.c + $2.c; }
      | { $$.c = ""; }
      ;
+*/
+
+CMDS : CMD_ONELINE ';' CMDS
+       { $$.c = $1.c + $3.c; }
+     | CMD_BLOCO CMDS
+       { $$.c = $1.c + $2.c; }
+     | %prec LOWER_THAN_CMD
+       { $$.c = ""; }
+     ;
+
 
 CMD_ONELINE : COMOPRINTA
             | LEIA
             | ATRIB
             | CMD_WATCH
             | RETURN
+            | EXIT
+            | FUNCTION_CALL
             ;
 
 CMD_BLOCO : BLOCO
@@ -352,9 +389,29 @@ CMD_BLOCO : BLOCO
           | CMD_SWITCH
           ;
 
-CMD : CMD_ONELINE
-    | CMD_BLOCO
-    ;
+FUNCTION_CALL : TK_ID TK_ABREP EXPRSL TK_FECHAP
+                {
+                  cerr << "aqui" << endl;
+
+                  Tipo tipo_func = consulta_ts( $1.v );
+
+                  if ( tipo_func.params.size() != $3.lista_str.size() )
+                    erro( "Quantidade errada de parâmetros" );
+
+                  //Tipo tipo_func = ( $1.v );
+                  $$.t = tipo_func.retorno[0].tipo_base;
+
+                // Falta verificar o tipo da função e os parametros.
+
+                  $$.c = $3.c + "  " + $1.v + "( ";
+
+                  for( int i = 0; i < $3.lista_str.size(); i++ ) {
+                    if ( $3.lista_tipo[i].tipo_base != tipo_func.params[i].tipo_base )
+                      erro( "Parâmetro de tipo imcompatível" );
+                    $$.c += $3.lista_str[i] + (i == $3.lista_str.size() - 1 ? " );\n" : ", ");
+                  }
+                }
+              ;
 
 CMD_WATCH : TK_WATCH TK_ID
           {
@@ -367,40 +424,40 @@ CMD_WATCH : TK_WATCH TK_ID
             $$.c += "cout << endl;\n";
           }
 
-CMD_SWITCH  : TK_SWITCH TK_ABREP TK_ID TK_FECHAP SWITCH_BLOCO
-            {
-              $$.c = "";
-              string fim_label = gera_label("fim_switch");
-
-              // Gerando as variáveis para comparação.
-              for (int i = $5.lista_str.size() - 1; i >= 0; i--) {
-                  string var = gera_nome_var_temp( "b" );
-                  $$.c += var + " = " + $3.v + " == " + $$.lista_str[i] + ";\n";
-                  $$.c += "if (" + var + ") goto " + $$.switch_labels[i] + ";\n";
-              }
-              $$.c += "\n";
-
-              // Se houver default.
-              if ($5.default_label != "") {
-                $$.c += "goto " + $5.default_label + ";\n\n";
-              }
-
-              // Para cada case.
-              for (int i = $5.lista_str.size() - 1; i >= 0; i--) {
-                $$.c += $5.switch_labels[i] + ":\n";
-                $$.c += $5.switch_code[i] + "\n";
-                if ($5.tem_break[i]) $$.c += "goto " + fim_label + ";\n";
-              }
-
-              // Se houver default.
-              if ($5.default_label != "") {
-                $$.c += $5.default_label + ":\n";
-                $$.c += $5.default_code + "\n";
-              }
-
-              // Marcador final.
-              $$.c += fim_label + ":\n";
-            }
+CMD_SWITCH : TK_SWITCH TK_ABREP TK_ID TK_FECHAP SWITCH_BLOCO
+             {
+               $$.c = "";
+               string fim_label = gera_label("fim_switch");
+ 
+                // Gerando as variáveis para comparação.
+                for (int i = $5.lista_str.size() - 1; i >= 0; i--) {
+                    string var = gera_nome_var_temp( "b" );
+                    $$.c += var + " = " + $3.v + " == " + $$.lista_str[i] + ";\n";
+                    $$.c += "if (" + var + ") goto " + $$.switch_labels[i] + ";\n";
+                }
+                $$.c += "\n";
+ 
+                // Se houver default.
+                if ($5.default_label != "") {
+                  $$.c += "goto " + $5.default_label + ";\n\n";
+                }
+ 
+                // Para cada case.
+                for (int i = $5.lista_str.size() - 1; i >= 0; i--) {
+                  $$.c += $5.switch_labels[i] + ":\n";
+                  $$.c += $5.switch_code[i] + "\n";
+                  if ($5.tem_break[i]) $$.c += "goto " + fim_label + ";\n";
+                }
+ 
+                // Se houver default.
+                if ($5.default_label != "") {
+                  $$.c += $5.default_label + ":\n";
+                  $$.c += $5.default_code + "\n";
+                }
+ 
+                // Marcador final.
+                $$.c += fim_label + ":\n";
+             }
 
 SWITCH_BLOCO  : TK_CASE F ':' CMDS SWITCH_BLOCO
               {
@@ -438,33 +495,33 @@ LEIA :  TK_READ IDS
         }
 
 CMD_WHILE : TK_DA E TK_QUE TK_EU TK_TE TK_DOU TK_OUTRA CMD_ONELINE ';'
-          {
-            string label_inicio = gera_label( "inicio_while" );
-            string label_fim = gera_label( "fim_while" );
+            {
+              string label_inicio = gera_label( "inicio_while" );
+              string label_fim = gera_label( "fim_while" );
+  
+              string condicao = gera_nome_var_temp ( "b" );
+              //condicao.c = label_inicio + ":;\n" + $2.c + "  " +
 
-            string condicao = gera_nome_var_temp ( "b" );
-            //condicao.c = label_inicio + ":;\n" + $2.c + "  " +
-
-            $$.c =  label_inicio + ":;\n" + $2.c + condicao + " = !" + $2.v + ";\n" +
-                    "if ( " + condicao + " ) goto " + label_fim + ";\n" +
-                    $8.c +
-                    + "goto " + label_inicio + ";\n" +
-                    label_fim + ":;\n";
-          }
+              $$.c =  label_inicio + ":;\n" + $2.c + condicao + " = !" + $2.v + ";\n" +
+                      "if ( " + condicao + " ) goto " + label_fim + ";\n" +
+                      $8.c +
+                      + "goto " + label_inicio + ";\n" +
+                      label_fim + ":;\n";
+              }
           | TK_DA E TK_QUE TK_EU TK_TE TK_DOU TK_OUTRA CMD_BLOCO
-          {
-            string label_inicio = gera_label( "inicio_while" );
-            string label_fim = gera_label( "fim_while" );
+            {
+              string label_inicio = gera_label( "inicio_while" );
+              string label_fim = gera_label( "fim_while" );
 
-            string condicao = gera_nome_var_temp ( "b" );
-            //condicao.c = label_inicio + ":;\n" + $2.c + "  " +
+              string condicao = gera_nome_var_temp ( "b" );
+              //condicao.c = label_inicio + ":;\n" + $2.c + "  " +
 
-            $$.c =  label_inicio + ":;\n" + $2.c + condicao + " = !" + $2.v + ";\n" +
-                    "if ( " + condicao + " ) goto " + label_fim + ";\n" +
-                    $8.c +
-                    + "goto " + label_inicio + ";\n" +
-                    label_fim + ":;\n";
-          }
+              $$.c =  label_inicio + ":;\n" + $2.c + condicao + " = !" + $2.v + ";\n" +
+                      "if ( " + condicao + " ) goto " + label_fim + ";\n" +
+                      $8.c +
+                      + "goto " + label_inicio + ";\n" +
+                      label_fim + ":;\n";
+            }
         ;
 
 CMD_DO_WHILE : TK_DO CMD_BLOCO TK_WHILE E
@@ -540,7 +597,7 @@ CMD_ELSE : TK_ELSE CMD_ONELINE ';'
            { $$.c = $2.c; }
          | TK_ELSE CMD_BLOCO
            { $$.c = $2.c; }
-         |
+         | %prec LOWER_THAN_ELSE
            { $$ = Atributos(); }
          ;
 
@@ -611,8 +668,8 @@ ATRIB : TK_ID TK_ATRIB E
           erro( "Indice de array deve ser integer de zero dimensão: " +
                 $6.t.tipo_base + "/" + toString( $6.t.ndim ) );
 
-        string var1 = gera_nome_var_temp( $$.t.tipo_base );
-        string var2 = gera_nome_var_temp( $$.t.tipo_base );
+        string var1 = gera_nome_var_temp( "i" );
+        string var2 = gera_nome_var_temp( "i" );
 
         int m = tipoArray.tam[1];
 
@@ -711,8 +768,8 @@ F : TK_CINT
               $6.t.tipo_base + "/" + toString( $6.t.ndim ) );
 
       $$.v = gera_nome_var_temp( $$.t.tipo_base );
-      string var1 = gera_nome_var_temp( $$.t.tipo_base );
-      string var2 = gera_nome_var_temp( $$.t.tipo_base );
+      string var1 = gera_nome_var_temp( "i" );
+      string var2 = gera_nome_var_temp( "i" );
       int m = tipoArray.tam[1];
 
       $$.c =  $3.c + $6.c + gera_teste_limite_array( $3.v, $6.v, tipoArray ) +
@@ -722,11 +779,9 @@ F : TK_CINT
     }
   | TK_ID
     { $$.v = $1.v; $$.t = consulta_ts( $1.v ); $$.c = $1.c; }
-  | TK_ID TK_ABREP EXPRS TK_FECHAP
+  | TK_ID TK_ABREP EXPRSL TK_FECHAP
     {
-      cerr << $1.v << endl;
       Tipo tipo_func = consulta_ts( $1.v );
-      cerr << tipo_func.params.size() << ' ' << $3.lista_str.size() << endl;
 
       if ( tipo_func.params.size() != $3.lista_str.size() )
         erro( "Quantidade errada de parâmetros" );
@@ -746,6 +801,11 @@ F : TK_CINT
       }
     }
   ;
+
+EXPRSL  : EXPRS
+          { $$ = $1; }
+        | { $$ = Atributos(); }
+        ;
 
 
 EXPRS : EXPRS ',' E
@@ -950,18 +1010,22 @@ int toInt( string valor ) {
 
   return aux;
 }
+
 string gera_nome_var_temp( string tipo ) {
   static int n = 0;
   string nome = "t" + tipo + "_" + toString( ++n );
+
+  if ( tipo == "v" )
+    erro( "Declaração inválida de variável do tipo \"vento\"." );
 
   var_temp[var_temp.size()-1] += declara_variavel( nome, Tipo( tipo ) ) + ";\n";
 
   return nome;
 }
 
-string gera_label( string tipo ) {
+string gera_label( string label ) {
   static int n = 0;
-  string nome = "l_" + tipo + "_" + toString( ++n );
+  string nome = "l_" + label + "_" + toString( ++n );
 
   return nome;
 }
@@ -1161,6 +1225,8 @@ string traduz_nome_tipo_lula( string tipo_lula ) {
     return "c";
   else if( tipo_lula == "cadeia" || tipo_lula == "cadeias" )
     return "s";
+  else if( tipo_lula == "vento" )
+    return "v";
   else
     erro( "Tipo inválido: " + tipo_lula );
 }
@@ -1172,6 +1238,7 @@ map<string, string> inicializaMapEmC() {
   aux["d"] = "double ";
   aux["c"] = "char ";
   aux["s"] = "char ";
+  aux["v"] = "void ";
   return aux;
 }
 

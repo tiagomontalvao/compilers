@@ -54,6 +54,7 @@ COMMENT "(*"([^*]|"*"[^)])*"*)"
 "PEC" 			{ yylval = Atributos( yytext ); return TK_FUNCTION; }
 "desvia" 		{ yylval = Atributos( yytext ); return TK_RETURN; }
 "cospe" 		{ yylval = Atributos( yytext ); return TK_RETURN; }
+"exit"	 		{ yylval = Atributos( yytext ); return TK_EXIT; }
 
 ":="       		{ yylval = Atributos( yytext ); return TK_ATRIB; }
 "="       		{ yylval = Atributos( yytext ); return TK_ATRIB; }
@@ -81,7 +82,7 @@ COMMENT "(*"([^*]|"*"[^)])*"*)"
 "*" 			{ yylval = Atributos( yytext ); return TK_MULT; }
 "/" 			{ yylval = Atributos( yytext ); return TK_DIV; }
 "mod"			{ yylval = Atributos( yytext ); return TK_MOD; }
-"%" 			{ yylval = Atributos( yytext ); return TK_REST; }
+"%" 			{ yylval = Atributos( yytext ); return TK_MOD; }
 
 
 {CSTRING}  		{ yylval = Atributos( troca_aspas( yytext ), Tipo( "string" ) );

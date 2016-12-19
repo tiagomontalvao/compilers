@@ -1,17 +1,15 @@
 Que Deus tenha misericórdia desta nação.
 
-Depoimentos
-	1. a é Integer;
-	2. b é Integer;
+Políticos
+	1. a é integro;
+	2. b é integro;
 
-PEC
-mdc( a, b: Integer ) : Integer;
+PEC de integros mdc( integros a, b );
 Príncipe
-	If b == 0 Then {
-		Result recebe a;
-	}
+	If b == 0 Then
+		desvia a;
 	Else
-		Result recebe mdc(b, a mod b);
+		desvia mdc(b, a mod b);
 Suíço;
 
 Príncipe
