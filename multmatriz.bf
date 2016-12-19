@@ -2,13 +2,12 @@ Que Deus tenha misericórdia desta nação.
 
 Políticos
 	1. seed é integro;
-	2. a é delação de [3][4] integros;
-	3. b é delação de [4][2] integros;
-	4. c é delação de [3][2] integros;
+	2. a é delação de [3][4] corruptos;
+	3. b é delação de [4][2] corruptos;
+	4. c é delação de [3][2] corruptos;
 	5. i é integro;
 	6. j é integro;
 	7. k é integro;
-	8. aux é integro;
 
 PEC de integros pseudo_random();
 Políticos
@@ -21,7 +20,7 @@ Príncipe
 
 Suíço;
 
-PEC de vento imprime( delação de [3][2] integros m; integros l, c );
+PEC de vento imprime( delação de [3][2] corruptos m; integros l, c );
 Políticos
 	1. i é integro;
 	2. j é integro;
@@ -35,8 +34,8 @@ Príncipe
 	}
 Suíço;
 
-PEC de vento multiplica( delação de [3][4] integros a; delação de [4][2] integros b;
-						 integros lin_a, col_a, lin_b, col_b; delação de [3][2] integros c);
+PEC de vento multiplica( delação de [3][4] corruptos a; delação de [4][2] corruptos b;
+						 integros lin_a, col_a, lin_b, col_b; delação de [3][2] corruptos c);
 
 Políticos
 	1. i é integro;
@@ -74,7 +73,11 @@ Príncipe
 		}
 	}
 
-	multiplica( a, b, 3, 4, 4, 2, c );
+	k recebe 2.5*2;
+	Como printa, deputado? k +n;
+
+
+	multiplica( a, b, 3, 3, 4, 2, c );
     imprime( c, 3, 2 );
     imprime( c, 3, 3 );
 
