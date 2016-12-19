@@ -55,6 +55,7 @@ COMMENT "(*"([^*]|"*"[^)])*"*)"
 "desvia" 		{ yylval = Atributos( yytext ); return TK_RETURN; }
 "cospe" 		{ yylval = Atributos( yytext ); return TK_RETURN; }
 "exit"	 		{ yylval = Atributos( yytext ); return TK_EXIT; }
+"ref"	 		{ yylval = Atributos( yytext ); return TK_REF; }
 
 ":="       		{ yylval = Atributos( yytext ); return TK_ATRIB; }
 "="       		{ yylval = Atributos( yytext ); return TK_ATRIB; }

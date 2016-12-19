@@ -1,5 +1,7 @@
 lex.*
 y.*
+**.cc
+**.out
 Gabarito/*
 saida
 trabalho

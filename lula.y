@@ -34,6 +34,7 @@ struct Tipo {
   // 2) Para ser genérico. Algumas linguagens permitem mais de um valor
   //    de retorno.
   vector<Tipo> params;
+  bool referencia;
   bool funcao_string;
 
   Tipo() {} // Construtor Vazio
@@ -41,6 +42,7 @@ struct Tipo {
   Tipo( string tipo) {
     tipo_base = tipo;
     ndim = BASICO;
+    referencia = false;
     funcao_string = false;
   }
 
@@ -48,6 +50,7 @@ struct Tipo {
     tipo_base = base;
     ndim = VETOR;
     this->tam[0] = tam;
+    referencia = false;
     funcao_string = false;
   }
 
@@ -56,6 +59,7 @@ struct Tipo {
     ndim = MATRIZ;
     this->tam[0] = tam_0;
     this->tam[1] = tam_1;
+    referencia = false;
     funcao_string = false;
   }
 
@@ -63,6 +67,7 @@ struct Tipo {
     ndim = FUNCAO;
     this->retorno.push_back( retorno );
     this->params = params;
+    referencia = false;
     funcao_string = false;
   }
 
@@ -71,6 +76,7 @@ struct Tipo {
     this->retorno.push_back( retorno );
     this->params = params;
     this->funcao_string = funcao_string;
+    referencia = false;
   }
 };
 
@@ -143,7 +149,7 @@ string includes =
 %token TK_MOD TK_IGU TK_MENORQ TK_MAIORQ TK_MAIG TK_MEIG TK_DIF TK_IF TK_THEN TK_ELSE
 %token TK_AND TK_OR TK_NOT TK_IN TK_ABREP TK_FECHAP TK_MAIS TK_MENOS TK_MULT TK_DIV
 %token TK_FOR TK_SWITCH TK_CASE TK_DEFAULT TK_BREAK TK_TO TK_DO TK_ARRAY TK_DE TK_IS
-%token TK_DA TK_QUE TK_EU TK_TE TK_DOU TK_OUTRA TK_WHILE TK_RETURN TK_EXIT
+%token TK_DA TK_QUE TK_EU TK_TE TK_DOU TK_OUTRA TK_WHILE TK_RETURN TK_EXIT TK_REF
 
 %nonassoc TK_MAIORQ TK_MENORQ TK_MAIG TK_MEIG TK_IGU TK_DIF
 %left TK_AND TK_OR TK_NOT TK_IN
@@ -304,38 +310,51 @@ PARAMS : PARAM ';' PARAMS
        | PARAM
        ;
 
-PARAM : TK_ID IDS
+OPC_REF: TK_REF
+          // mudar
+         { $$ = Atributos( "ref", Tipo() ); }
+       | { $$ = Atributos(); }
+       ;
+
+PARAM : OPC_REF TK_ID IDS
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_lula( $1.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $2.v ) );
+
+        if ( $1.v == "ref" )
+          tipo.referencia = true;
 
         $$ = Atributos();
-        $$.lista_str = $2.lista_str;
+        $$.lista_str = $3.lista_str;
 
-        for( int i = 0; i < $2.lista_str.size(); i++ )
+        for( int i = 0; i < $3.lista_str.size(); i++ )
           $$.lista_tipo.push_back( tipo );
       }
-    | TK_ARRAY TK_DE '[' TK_CINT ']' TK_ID IDS
-    // (a, b) : coligação de [10] inteiros
-    // coligação de [10] inteiros (a, b)
+    | OPC_REF TK_ARRAY TK_DE '[' TK_CINT ']' TK_ID IDS
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_lula( $6.v ),
-                          toInt( $4.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $7.v ),
+                          toInt( $5.v ) );
+
+        if ( $1.v == "ref" )
+          tipo.referencia = true;
 
         $$ = Atributos();
-        $$.lista_str = $7.lista_str;
+        $$.lista_str = $8.lista_str;
 
-        for( int i = 0; i < $7.lista_str.size(); i ++ )
+        for( int i = 0; i < $8.lista_str.size(); i ++ )
           $$.lista_tipo.push_back( tipo );
       }
-    | TK_ARRAY TK_DE '[' TK_CINT ']' '[' TK_CINT ']' TK_ID IDS
+    | OPC_REF TK_ARRAY TK_DE '[' TK_CINT ']' '[' TK_CINT ']' TK_ID IDS
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_lula( $9.v ),
-                          toInt( $4.v ), toInt( $7.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $10.v ),
+                          toInt( $5.v ), toInt( $8.v ) );
+
+        if ( $1.v == "ref" )
+          tipo.referencia = true;
 
         $$ = Atributos();
-        $$.lista_str = $10.lista_str;
+        $$.lista_str = $11.lista_str;
 
-        for( int i = 0; i < $10.lista_str.size(); i ++ )
+        for( int i = 0; i < $11.lista_str.size(); i ++ )
           $$.lista_tipo.push_back( tipo );
       }
     ;
@@ -1560,7 +1579,9 @@ string declara_variavel( string nome, Tipo tipo ) {
        erro( "Bug muito sério..." );
   }
 
-  return em_C[ tipo.tipo_base ] + nome + indice;
+  string ref = tipo.referencia ? "&" : "";
+
+  return em_C[ tipo.tipo_base ] + ref + nome + indice;
 }
 
 string gera_teste_limite_array( string indice_1, Tipo tipoArray ) {
