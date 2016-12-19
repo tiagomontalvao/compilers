@@ -335,6 +335,45 @@ IDS : IDS ',' TK_ID
         $$.lista_str.push_back( $1.v ); }
     ;
 
+IDS_LEIA  : TK_ID ',' IDS_LEIA
+          {
+            $$ = $3;
+            $$.c += $1.c;
+            $$.lista_str.push_back( $3.v );
+            $$.lista_tipo.push_back( $3.t.tipo_base );
+          }
+          | TK_ID '[' E ']' ',' IDS_LEIA
+          {
+            $$ = $6;
+
+            string var = gera_nome_var_temp( $3.t.tipo_base );
+
+            $$.c += $3.c +
+                   var + " = " + $3.v + ";\n";
+
+            $$.lista_str.push_back( $1.v + "[" + var + "]" );
+            $$.lista_tipo.push_back( $3.t.tipo_base );
+          }
+          | TK_ID '[' E ']'
+          {
+            $$ = Atributos();
+
+            string var = gera_nome_var_temp( $3.t.tipo_base );
+
+            $$.c = $3.c +
+                   var + " = " + $3.v + ";\n";
+
+            $$.lista_str.push_back( $1.v + "[" + var + "]" );
+            $$.lista_tipo.push_back( $1.t.tipo_base );
+           }
+           | TK_ID
+           {
+              $$ = Atributos();
+              $$.lista_str.push_back( $1.v );
+              $$.lista_tipo.push_back( $1.t.tipo_base );
+          }
+          ;
+
 MAIN : BLOCO '.'
        { $$.c = "int main() { \n" + $1.c + "  return 0;\n}\n"; }
      ;
@@ -487,10 +526,79 @@ SWITCH_BLOCO  : TK_CASE F ':' CMDS SWITCH_BLOCO
               }
               |
 
-LEIA :  TK_READ IDS
+LEIA :  TK_READ IDS_LEIA
         {
-          for( int i = 0; i < $2.lista_str.size(); i ++ ) {
-            $$.c += "  cin >> " + $2.lista_str[i] + ";\n";
+          $$.c = $2.c;
+
+          for( int i = (int) $2.lista_str.size() - 1; i >= 0 ; i-- ) {
+            string nome_var;
+
+            if ($2.lista_str[i].find('[') == string::npos) {
+              nome_var = $2.lista_str[i];
+            } else {
+              nome_var = $2.lista_str[i].substr(0, $2.lista_str[i].find('['));
+            }
+
+            Tipo tipo = consulta_ts( nome_var );
+
+            if ( tipo.ndim == VETOR ) {
+              if ( tipo.tipo_base == "s") {
+                // var é o nome da variável com []s.
+                string var = $2.lista_str[i];
+                string idx = "";
+
+                for (int i = var.find('[') + 1; var[i] != ']'; i++) {
+                  idx += var[i];
+                }
+
+                string arr_str_nome = var.substr(0, var.find('['));
+                string str_tmp = gera_nome_var_temp("s");
+                $$.c += "  cin >> " + str_tmp + ";\n";
+
+                string lower = gera_nome_var_temp("i");
+                $$.c += lower + " = " + idx + " * 256;\n";
+
+                string i = gera_nome_var_temp("i");
+                $$.c += i + " = " + lower + ";\n";
+
+                string ii = gera_nome_var_temp("i");
+                $$.c += ii + " = " + "0;\n";
+
+                string inicio_leitura = gera_label("leitura_array_string_inicio");
+                string fim_leitura = gera_label("leitura_array_string_fim");
+
+                string dsadqwe = gera_nome_var_temp("i");
+
+                $$.c += inicio_leitura + ":\n";
+                $$.c += dsadqwe + " = " + ii + " >= 256;\n";
+                $$.c += "if (" + dsadqwe + ") goto " + fim_leitura + ";\n";
+
+                string qweqwe = gera_nome_var_temp("c");
+                $$.c += qweqwe + " = " + str_tmp + "["+ ii +"];\n";
+
+                $$.c += arr_str_nome + "[" + i + "] = " + qweqwe + ";\n";
+                $$.c += i + " = " + i + " + 1;\n";
+                $$.c += ii + " = " + ii + " + 1;\n";
+
+
+                $$.c += "goto " + inicio_leitura + ";\n";
+                $$.c += fim_leitura + ":\n";
+              } else {
+                // var é o nome da variável com []s.
+               string var = $2.lista_str[i];
+                string arr_nome = var.substr(0, var.find('['));
+                string tmp = gera_nome_var_temp ( "i" );
+                $$.c += "cin >> " + tmp + ";\n";
+                int len = var.length();
+                string idx = var.substr(var.find('[') + 1, len - var.find('[')  - 2);
+
+                $$.c += arr_nome + "[";
+                $$.c += idx;
+                $$.c += "] = " + tmp + ";\n";
+              }
+            } else {
+              $$.c += "  cin >> " + $2.lista_str[i] + ";\n";
+            }
           }
         }
 
@@ -739,13 +847,40 @@ F : TK_CINT
       $$.v = gera_nome_var_temp( $$.t.tipo_base );
 
       if ($$.t.tipo_base == "s") {
-        string i = gera_nome_var_temp( "i" );
-
         $$.c = $3.c + gera_teste_limite_array( $3.v, tipoArray );
 
-        $$.c += "for (int " + i + " = 0; " + i + " < 256; " + i + "++)\n";
-        $$.c += $$.v + "[" + i + "] = " + $1.v + "[" + i + "];\n";
+        string idx = $3.v;
 
+        string lower = gera_nome_var_temp("i");
+        $$.c += lower + " = " + idx + " * 256;\n";
+
+        string i = gera_nome_var_temp("i");
+        $$.c += i + " = " + lower + ";\n";
+
+        string ii = gera_nome_var_temp("i");
+        $$.c += ii + " = " + "0;\n";
+
+        string output = gera_nome_var_temp("s");
+
+        string inicio_print_leitura = gera_label("print_array_string_inicio");
+        string fim_print_label = gera_label("print_array_string_fim");
+
+        string cond = gera_nome_var_temp("i");
+        $$.c += inicio_print_leitura + ":\n";
+        $$.c += cond + " = " + ii + " >= 256;\n";
+        $$.c += "if (" + cond + ") goto " + fim_print_label + ";\n";
+
+        string qweqwe = gera_nome_var_temp("c");
+        $$.c += qweqwe + " = " + $1.v + "["+ i +"];\n";
+
+        $$.c += output + "[" + ii + "] = " + qweqwe + ";\n";
+        $$.c += i + " = " + i + " + 1;\n";
+        $$.c += ii + " = " + ii + " + 1;\n";
+
+        $$.c += "goto " + inicio_print_leitura + ";\n";
+        $$.c += fim_print_label + ":\n";
+
+        $$.v = output;
       } else {
         $$.c = $3.c +
                gera_teste_limite_array( $3.v, tipoArray ) +
