@@ -72,6 +72,7 @@ struct Atributos {
   vector<int> tem_break; // Usado no switch-case.
   string default_label; // Usado no switch-case.
   string default_code; // Usado no switch-case.
+  bool funcao_string; //Usada para saber se é uma função que retorna uma string.
 
   Atributos() {} // Constutor vazio
   Atributos( string valor ) {
@@ -116,7 +117,9 @@ string includes =
 "#include <cstdlib>\n"
 "#include <cstring>\n"
 "\n"
-"using namespace std;\n";
+"using namespace std;\n"
+"\n"
+"char str2fct[256];";
 
 
 #define YYSTYPE Atributos
@@ -200,14 +203,42 @@ EXIT : TK_EXIT
        { $$.c = "  exit(0);\n"; }
      ;
 
-FUNCTION : { empilha_ts(); }  CABECALHO ';' CORPO { desempilha_ts(); } ';'
-           { $$.c = $2.c + " {\n" + $4.c +
-                    "}\n"; }
+FUNCTION :  { empilha_ts(); }  CABECALHO ';' CORPO { desempilha_ts(); } ';'
+            {
+              if ($2.funcao_string) {
+                string code = $4.c;
+                if( code.find("return") == string::npos) {
+                  erro ("Função deveria retornar uma string.");
+                } else {
+                  int x = code.find("return") + 7;
+                  string var = "";
+                  int i = x;
+
+                  for (; code[i] != ';'; i++) {
+                    if (code[i] != ' ') var += code[i];
+                  }
+
+                  code = code.substr(0, i - var.length() - 7);
+                  code += "  strncat( str2fct, " + var + ", 256 );\n";
+
+                  $$.c = $2.c + " {\n" + code + "}\n";
+                }
+              } else {
+                $$.c = $2.c + " {\n" + $4.c + "}\n";
+              }
+            }
          ;
 
 CABECALHO : TK_FUNCTION TK_DE TK_ID TK_ID OPC_PARAM
             {
               Tipo tipo( traduz_nome_tipo_lula( $3.v ) );
+
+              if (tipo.tipo_base == "s") {
+                tipo.tipo_base = "v";
+                $$.funcao_string = true;
+              } else {
+                $$.funcao_string = false;
+              }
 
               $$.c = declara_funcao( $4.v, tipo, $5.lista_str, $5.lista_tipo );
               insere_funcao_ts( $4.v, tipo, $5.lista_tipo ) ;
