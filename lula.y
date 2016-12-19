@@ -85,8 +85,8 @@ struct Atributos {
   string default_label; // Usado no switch-case.
   string default_code; // Usado no switch-case.
 
-  string nome_funcao_string;  // Usado nas funções que retornam string
-  Tipo tipo_funcao_string;  // Usado nas funções que retornam string
+  string nome_var_string; // Usado nas funções que retornam string
+  Tipo tipo_var_string;  // Usado nas funções que retornam string
 
   Atributos() {} // Constutor vazio
   Atributos( string valor ) {
@@ -152,7 +152,6 @@ string includes =
 
 %nonassoc LOWER_THAN_ELSE
 %nonassoc TK_ELSE
-
 %nonassoc LOWER_THAN_CMD
 %nonassoc TK_EXIT
 %nonassoc TK_COMOPRINTA
@@ -166,7 +165,12 @@ string includes =
 %nonassoc TK_WHILE
 %nonassoc TK_DO
 %nonassoc TK_SWITCH
-
+%nonassoc TK_ID
+%nonassoc TK_CINT
+%nonassoc TK_CDOUBLE
+%nonassoc TK_CSTRING
+%nonassoc TK_ABREP
+%nonassoc TK_DA
 %%
 
 S : PROGRAM DECLS MAIN
@@ -498,6 +502,7 @@ CMD_SWITCH : TK_SWITCH TK_ABREP TK_ID TK_FECHAP SWITCH_BLOCO
                 // Marcador final.
                 $$.c += fim_label + ":\n";
              }
+             ;
 
 SWITCH_BLOCO  : TK_CASE F ':' CMDS SWITCH_BLOCO
               {
@@ -525,7 +530,7 @@ SWITCH_BLOCO  : TK_CASE F ':' CMDS SWITCH_BLOCO
                 $$.default_label = gera_label("default_switch");
                 $$.default_code = $3.c;
               }
-              |
+              ;
 
 LEIA :  TK_READ IDS_LEIA
         {
@@ -602,6 +607,7 @@ LEIA :  TK_READ IDS_LEIA
             }
           }
         }
+        ;
 
 CMD_WHILE : TK_DA E TK_QUE TK_EU TK_TE TK_DOU TK_OUTRA CMD_ONELINE ';'
             {
@@ -723,30 +729,35 @@ COMOPRINTA : TK_COMOPRINTA E
           { $$.c = "  cout << endl;\n"; }
         ;
 
-ATRIB : TK_ID TK_ATRIB FUNCTION_CALL
-        {
-          Tipo tipo_s3 = consulta_ts( $3.v );
-
-          if ( tipo_s3.funcao_string ) {
-            $$.c = $3.c + "  strncpy( " + $1.v + ", " + $3.nome_funcao_string + ", 256 );\n";
-          }
-        }
-        | TK_ID TK_ATRIB E
+ATRIB : TK_ID TK_ATRIB E
         { // Falta verificar se pode atribuir (perde ponto se não fizer).
 
-          $1.t = consulta_ts( $1.v ) ;
 
-          if(( $1.t.tipo_base == "i" and $3.t.tipo_base == "d" ) or ( $1.t.tipo_base == "d" and $3.t.tipo_base == "i" )) {
-            // Pior tratamento de erro que já fiz na minha vida.
-          } else if( $1.t.tipo_base != $3.t.tipo_base )
-            erro( "Tipos incompatíveis na atribuição " + $1.t.tipo_base + ", " +  $3.t.tipo_base + " " );
+          cerr << $3.v << endl;
+          if ( $3.nome_var_string != "" ) {
+            
+            Tipo tipo_s3 = consulta_ts( $3.v );
+            
+            $$.c = $3.c + "  strncpy( " + $1.v + ", " + $3.nome_var_string + ", 256 );\n";
+            
+          } else {
 
-          if( $1.t.tipo_base == "s" )
-            $$.c = $3.c + "  strncpy( " + $1.v + ", " + $3.v + ", 256 );\n";
-          else
-            $$.c = $3.c + "  " + $1.v + " = " + $3.v + ";\n";
+            $1.t = consulta_ts( $1.v ) ;
 
-          debug( "ATRIB : TK_ID TK_ATRIB E ';'", $$ );
+            if(( $1.t.tipo_base == "i" and $3.t.tipo_base == "d" ) or ( $1.t.tipo_base == "d" and $3.t.tipo_base == "i" )) {
+              // Pior tratamento de erro que já fiz na minha vida.
+            } else if( $1.t.tipo_base != $3.t.tipo_base )
+              erro( "Tipos incompatíveis na atribuição " + $1.t.tipo_base + ", " +  $3.t.tipo_base + " " );
+
+            if( $1.t.tipo_base == "s" )
+              $$.c = $3.c + "  strncpy( " + $1.v + ", " + $3.v + ", 256 );\n";
+            else
+              $$.c = $3.c + "  " + $1.v + " = " + $3.v + ";\n";
+
+          }
+
+          
+
 
 
         }
@@ -837,7 +848,6 @@ E : E TK_MAIS E
     { $$ = $2; }
   | F
   ;
-
 
 
 F : TK_CINT
@@ -945,11 +955,12 @@ F : TK_CINT
 
       if ( tipo_func.funcao_string ) {
 
-      $$.t = tipo_func.retorno[0].tipo_base;
+        $$.t = tipo_func.retorno[0].tipo_base;
         if ( tipo_func.params.size() != $3.lista_str.size() + 1 )
           erro( "Quantidade errada de parâmetros" );
 
-          $$.v = gera_nome_var_temp( "s" );
+          $$.v = $1.v;
+          $$.nome_var_string = gera_nome_var_temp( "s" );
           $$.c = $3.c + "  " + $1.v + "( ";
 
           for( int i = 0; i < (int) $3.lista_str.size() - 1; i++ ) {
@@ -959,7 +970,7 @@ F : TK_CINT
           }
           if ( $3.lista_str.size() > 0 )
             $$.c += $3.lista_str[$3.lista_str.size() - 1];
-          $$.c += ", " + $$.v + " );\n";
+          $$.c += ", " + $$.nome_var_string + " );\n";
       } else {
 
         if ( tipo_func.params.size() != $3.lista_str.size() )
