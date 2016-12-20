@@ -922,6 +922,8 @@ E : E TK_MAIS E
     { $$ = gera_codigo_operador( $1, "&&", $3 ); }
   | E TK_OR E
     { $$ = gera_codigo_operador( $1, "||", $3 ); }
+  | TK_NOT E
+    { $$ = gera_codigo_operador( Atributos( "0", Tipo ("b") ), "!", $2 ); }
   | E TK_IN E
     { $$ = gera_codigo_operador( $1, "in", $3 ); }
   | TK_ABREP E TK_FECHAP
@@ -1164,7 +1166,7 @@ void inicializa_operadores() {
   tipo_opr["d*d"] = "d";
 
   // Resultados para o operador "/"
-  tipo_opr["i/i"] = "d";
+  tipo_opr["i/i"] = "i";
   tipo_opr["i/d"] = "d";
   tipo_opr["d/i"] = "d";
   tipo_opr["d/d"] = "d";
@@ -1220,8 +1222,10 @@ void inicializa_operadores() {
   tipo_opr["s>=c"] = "b";
   tipo_opr["s>=s"] = "b";
 
-  // Resultados para o operador "And"
+  // Resultados para o operador "And", "Or" e "Not"
   tipo_opr["b&&b"] = "b";
+  tipo_opr["b||b"] = "b";
+  tipo_opr["b!b"] = "b"; // Gambiarra feia, rude.
 
   // Resultados para o operador "=="
   tipo_opr["i==i"] = "b";
@@ -1363,9 +1367,6 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
 
   ss.t = tipo_resultado( s1.t, opr, s3.t );
   ss.v = gera_nome_var_temp( ss.t.tipo_base );
-
-  cerr << s1_t_tipo_base << " | " << s1.v << endl;
-  cerr << s3_t_tipo_base << " | " << s3.v << endl;
 
   if ( s1.t.ndim == 1 && s3.t.ndim == 1) {
     if ( opr == "==" || opr == "!" ) {
@@ -1511,6 +1512,17 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
     ;
   else if ( s1_t_tipo_base == "c" && s3_t_tipo_base == "s" )
     ;
+  else if (opr == "!") {
+    if (s3_t_tipo_base != "b") {
+      erro( "Só se pode negar booleanos." );
+    } else {
+      string tmp = gera_nome_var_temp("b");
+      ss.v = gera_nome_var_temp("b");
+      ss.c =  s3.c +
+              tmp + " = " + s3.v + ";\n" +
+              ss.v + " = ! " + tmp + ";\n";
+    }
+  }
   else {
     ss.c = s1.c + s3.c +
            "  " + ss.v + " = " + s1.v + " " + opr + " " + s3.v + ";\n";
