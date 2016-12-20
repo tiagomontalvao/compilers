@@ -33,8 +33,8 @@ COMMENT "(*"([^*]|"*"[^)])*"*)"
 "Mas o que é isso aqui?"  { yylval = Atributos( yytext ); return TK_WATCH; }
 "Como vota, deputado?" 			{ yylval = Atributos( yytext ); return TK_READ; }
 "Se"       		{ yylval = Atributos( yytext ); return TK_IF; }
-"preso amanhã"       		{ yylval = Atributos( yytext ); return TK_THEN; }
-"Senão"     		{ yylval = Atributos( yytext ); return TK_ELSE; }
+"rouba"       		{ yylval = Atributos( yytext ); return TK_THEN; }
+"Senão faz"     		{ yylval = Atributos( yytext ); return TK_ELSE; }
 "Para"      		{ yylval = Atributos( yytext ); return TK_FOR; }
 "Enquanto"   		{ yylval = Atributos( yytext ); return TK_WHILE; }
 "Dá"      		{ yylval = Atributos( yytext ); return TK_DA; }
