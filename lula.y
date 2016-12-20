@@ -673,7 +673,6 @@ CMD_WHILE : TK_DA E TK_QUE TK_EU TK_TE TK_DOU TK_OUTRA CMD_ONELINE ';'
               string label_fim = gera_label( "fim_while" );
 
               string condicao = gera_nome_var_temp ( "b" );
-              //condicao.c = label_inicio + ":;\n" + $2.c + "  " +
 
               $$.c =  label_inicio + ":;\n" + $2.c + condicao + " = !" + $2.v + ";\n" +
                       "if ( " + condicao + " ) goto " + label_fim + ";\n" +
@@ -687,7 +686,6 @@ CMD_WHILE : TK_DA E TK_QUE TK_EU TK_TE TK_DOU TK_OUTRA CMD_ONELINE ';'
               string label_fim = gera_label( "fim_while" );
 
               string condicao = gera_nome_var_temp ( "b" );
-              //condicao.c = label_inicio + ":;\n" + $2.c + "  " +
 
               $$.c =  label_inicio + ":;\n" + $2.c + condicao + " = !" + $2.v + ";\n" +
                       "if ( " + condicao + " ) goto " + label_fim + ";\n" +
@@ -721,7 +719,7 @@ CMD_DO_WHILE : TK_DO CMD_BLOCO TK_WHILE E
 CMD_FOR : TK_FOR NOME_VAR TK_ATRIB E TK_TO E TK_DO CMD_BLOCO
           {
 
-            if ( $2.t.ndim != 0 && $2.t.tipo_base != "i" && $2.t.tipo_base != "d" && $2.t.tipo_base != "c" )
+            if ( $2.t.ndim != 0 || $2.t.tipo_base != "i")
               erro( "Tipo incompatível no índice do for." );
 
             string var_fim = gera_nome_var_temp( $2.t.tipo_base );
@@ -729,12 +727,12 @@ CMD_FOR : TK_FOR NOME_VAR TK_ATRIB E TK_TO E TK_DO CMD_BLOCO
             string label_fim = gera_label( "fim_for" );
             string condicao = gera_nome_var_temp( "b" );
 
-            if(( $2.t.tipo_base == "i" and $4.t.tipo_base == "d" ) or ( $2.t.tipo_base == "d" and $4.t.tipo_base == "i" )) {
-              // Pior tratamento de erro que já fiz na minha vida.
-            } else if( $2.t.tipo_base != $4.t.tipo_base )
+            if( $4.t.tipo_base == "d" || $6.t.tipo_base == "d" ) {
+            } else if( $2.t.tipo_base != $4.t.tipo_base ) {
               erro( "Tipos incompatíveis na atribuição " + $2.t.tipo_base + ", " +  $4.t.tipo_base + " " );
+            } else if( $2.t.tipo_base != $6.t.tipo_base )
+              erro( "Tipos incompatíveis na atribuição " + $2.t.tipo_base + ", " +  $6.t.tipo_base + " " );
 
-            // Falta verificar os tipos... perde ponto se não o fizer.
             $$.c =  $4.c + $6.c +
                     "  " + $2.v + " = " + $4.v + ";\n" +
                     "  " + var_fim + " = " + $6.v + ";\n" +
@@ -749,12 +747,20 @@ CMD_FOR : TK_FOR NOME_VAR TK_ATRIB E TK_TO E TK_DO CMD_BLOCO
           }
         | TK_FOR NOME_VAR TK_ATRIB E TK_TO E TK_DO CMD_ONELINE ';'
           {
+            if ( $2.t.ndim != 0 || $2.t.tipo_base != "i")
+              erro( "Tipo incompatível no índice do for." );
+
             string var_fim = gera_nome_var_temp( $2.t.tipo_base );
             string label_teste = gera_label( "teste_for" );
             string label_fim = gera_label( "fim_for" );
             string condicao = gera_nome_var_temp( "b" );
 
-            // Falta verificar os tipos... perde ponto se não o fizer.
+            if( $4.t.tipo_base == "d" || $6.t.tipo_base == "d" ) {
+            } else if( $2.t.tipo_base != $4.t.tipo_base ) {
+              erro( "Tipos incompatíveis na atribuição " + $2.t.tipo_base + ", " +  $4.t.tipo_base + " " );
+            } else if( $2.t.tipo_base != $6.t.tipo_base )
+              erro( "Tipos incompatíveis na atribuição " + $2.t.tipo_base + ", " +  $6.t.tipo_base + " " );
+
             $$.c =  $4.c + $6.c +
                     "  " + $2.v + " = " + $4.v + ";\n" +
                     "  " + var_fim + " = " + $6.v + ";\n" +
