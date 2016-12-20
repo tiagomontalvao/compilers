@@ -34,6 +34,7 @@ struct Tipo {
   // 2) Para ser genérico. Algumas linguagens permitem mais de um valor
   //    de retorno.
   vector<Tipo> params;
+  bool referencia;
   bool funcao_string;
 
   Tipo() {} // Construtor Vazio
@@ -41,6 +42,7 @@ struct Tipo {
   Tipo( string tipo) {
     tipo_base = tipo;
     ndim = BASICO;
+    referencia = false;
     funcao_string = false;
   }
 
@@ -48,6 +50,7 @@ struct Tipo {
     tipo_base = base;
     ndim = VETOR;
     this->tam[0] = tam;
+    referencia = false;
     funcao_string = false;
   }
 
@@ -56,6 +59,7 @@ struct Tipo {
     ndim = MATRIZ;
     this->tam[0] = tam_0;
     this->tam[1] = tam_1;
+    referencia = false;
     funcao_string = false;
   }
 
@@ -63,6 +67,7 @@ struct Tipo {
     ndim = FUNCAO;
     this->retorno.push_back( retorno );
     this->params = params;
+    referencia = false;
     funcao_string = false;
   }
 
@@ -71,6 +76,7 @@ struct Tipo {
     this->retorno.push_back( retorno );
     this->params = params;
     this->funcao_string = funcao_string;
+    referencia = false;
   }
 };
 
@@ -143,7 +149,7 @@ string includes =
 %token TK_MOD TK_IGU TK_MENORQ TK_MAIORQ TK_MAIG TK_MEIG TK_DIF TK_IF TK_THEN TK_ELSE
 %token TK_AND TK_OR TK_NOT TK_IN TK_ABREP TK_FECHAP TK_MAIS TK_MENOS TK_MULT TK_DIV
 %token TK_FOR TK_SWITCH TK_CASE TK_DEFAULT TK_BREAK TK_TO TK_DO TK_ARRAY TK_DE TK_IS
-%token TK_DA TK_QUE TK_EU TK_TE TK_DOU TK_OUTRA TK_WHILE TK_RETURN TK_EXIT
+%token TK_DA TK_QUE TK_EU TK_TE TK_DOU TK_OUTRA TK_WHILE TK_RETURN TK_EXIT TK_REF
 
 %nonassoc TK_MAIORQ TK_MENORQ TK_MAIG TK_MEIG TK_IGU TK_DIF
 %left TK_AND TK_OR TK_NOT TK_IN
@@ -303,38 +309,51 @@ PARAMS : PARAM ';' PARAMS
        | PARAM
        ;
 
-PARAM : TK_ID IDS
+OPC_REF: TK_REF
+          // mudar
+         { $$ = Atributos( "ref", Tipo() ); }
+       | { $$ = Atributos(); }
+       ;
+
+PARAM : OPC_REF TK_ID IDS
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_lula( $1.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $2.v ) );
+
+        if ( $1.v == "ref" )
+          tipo.referencia = true;
 
         $$ = Atributos();
-        $$.lista_str = $2.lista_str;
+        $$.lista_str = $3.lista_str;
 
-        for( int i = 0; i < $2.lista_str.size(); i++ )
+        for( int i = 0; i < $3.lista_str.size(); i++ )
           $$.lista_tipo.push_back( tipo );
       }
-    | TK_ARRAY TK_DE '[' TK_CINT ']' TK_ID IDS
-    // (a, b) : coligação de [10] inteiros
-    // coligação de [10] inteiros (a, b)
+    | OPC_REF TK_ARRAY TK_DE '[' TK_CINT ']' TK_ID IDS
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_lula( $6.v ),
-                          toInt( $4.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $7.v ),
+                          toInt( $5.v ) );
+
+        if ( $1.v == "ref" )
+          tipo.referencia = true;
 
         $$ = Atributos();
-        $$.lista_str = $7.lista_str;
+        $$.lista_str = $8.lista_str;
 
-        for( int i = 0; i < $7.lista_str.size(); i ++ )
+        for( int i = 0; i < $8.lista_str.size(); i ++ )
           $$.lista_tipo.push_back( tipo );
       }
-    | TK_ARRAY TK_DE '[' TK_CINT ']' '[' TK_CINT ']' TK_ID IDS
+    | OPC_REF TK_ARRAY TK_DE '[' TK_CINT ']' '[' TK_CINT ']' TK_ID IDS
       {
-        Tipo tipo = Tipo( traduz_nome_tipo_lula( $9.v ),
-                          toInt( $4.v ), toInt( $7.v ) );
+        Tipo tipo = Tipo( traduz_nome_tipo_lula( $10.v ),
+                          toInt( $5.v ), toInt( $8.v ) );
+
+        if ( $1.v == "ref" )
+          tipo.referencia = true;
 
         $$ = Atributos();
-        $$.lista_str = $10.lista_str;
+        $$.lista_str = $11.lista_str;
 
-        for( int i = 0; i < $10.lista_str.size(); i ++ )
+        for( int i = 0; i < $11.lista_str.size(); i ++ )
           $$.lista_tipo.push_back( tipo );
       }
     ;
@@ -654,7 +673,6 @@ CMD_WHILE : TK_DA E TK_QUE TK_EU TK_TE TK_DOU TK_OUTRA CMD_ONELINE ';'
               string label_fim = gera_label( "fim_while" );
 
               string condicao = gera_nome_var_temp ( "b" );
-              //condicao.c = label_inicio + ":;\n" + $2.c + "  " +
 
               $$.c =  label_inicio + ":;\n" + $2.c + condicao + " = !" + $2.v + ";\n" +
                       "if ( " + condicao + " ) goto " + label_fim + ";\n" +
@@ -668,7 +686,6 @@ CMD_WHILE : TK_DA E TK_QUE TK_EU TK_TE TK_DOU TK_OUTRA CMD_ONELINE ';'
               string label_fim = gera_label( "fim_while" );
 
               string condicao = gera_nome_var_temp ( "b" );
-              //condicao.c = label_inicio + ":;\n" + $2.c + "  " +
 
               $$.c =  label_inicio + ":;\n" + $2.c + condicao + " = !" + $2.v + ";\n" +
                       "if ( " + condicao + " ) goto " + label_fim + ";\n" +
@@ -701,12 +718,21 @@ CMD_DO_WHILE : TK_DO CMD_BLOCO TK_WHILE E
 
 CMD_FOR : TK_FOR NOME_VAR TK_ATRIB E TK_TO E TK_DO CMD_BLOCO
           {
+
+            if ( $2.t.ndim != 0 || $2.t.tipo_base != "i")
+              erro( "Tipo incompatível no índice do for." );
+
             string var_fim = gera_nome_var_temp( $2.t.tipo_base );
             string label_teste = gera_label( "teste_for" );
             string label_fim = gera_label( "fim_for" );
             string condicao = gera_nome_var_temp( "b" );
 
-            // Falta verificar os tipos... perde ponto se não o fizer.
+            if( $4.t.tipo_base == "d" || $6.t.tipo_base == "d" ) {
+            } else if( $2.t.tipo_base != $4.t.tipo_base ) {
+              erro( "Tipos incompatíveis na atribuição " + $2.t.tipo_base + ", " +  $4.t.tipo_base + " " );
+            } else if( $2.t.tipo_base != $6.t.tipo_base )
+              erro( "Tipos incompatíveis na atribuição " + $2.t.tipo_base + ", " +  $6.t.tipo_base + " " );
+
             $$.c =  $4.c + $6.c +
                     "  " + $2.v + " = " + $4.v + ";\n" +
                     "  " + var_fim + " = " + $6.v + ";\n" +
@@ -721,12 +747,20 @@ CMD_FOR : TK_FOR NOME_VAR TK_ATRIB E TK_TO E TK_DO CMD_BLOCO
           }
         | TK_FOR NOME_VAR TK_ATRIB E TK_TO E TK_DO CMD_ONELINE ';'
           {
+            if ( $2.t.ndim != 0 || $2.t.tipo_base != "i")
+              erro( "Tipo incompatível no índice do for." );
+
             string var_fim = gera_nome_var_temp( $2.t.tipo_base );
             string label_teste = gera_label( "teste_for" );
             string label_fim = gera_label( "fim_for" );
             string condicao = gera_nome_var_temp( "b" );
 
-            // Falta verificar os tipos... perde ponto se não o fizer.
+            if( $4.t.tipo_base == "d" || $6.t.tipo_base == "d" ) {
+            } else if( $2.t.tipo_base != $4.t.tipo_base ) {
+              erro( "Tipos incompatíveis na atribuição " + $2.t.tipo_base + ", " +  $4.t.tipo_base + " " );
+            } else if( $2.t.tipo_base != $6.t.tipo_base )
+              erro( "Tipos incompatíveis na atribuição " + $2.t.tipo_base + ", " +  $6.t.tipo_base + " " );
+
             $$.c =  $4.c + $6.c +
                     "  " + $2.v + " = " + $4.v + ";\n" +
                     "  " + var_fim + " = " + $6.v + ";\n" +
@@ -769,8 +803,7 @@ COMOPRINTA : TK_COMOPRINTA E
         ;
 
 ATRIB : TK_ID TK_ATRIB E
-        { // Falta verificar se pode atribuir (perde ponto se não fizer).
-
+        {
 
           if ( $3.nome_da_funcao != "" ) {
 
@@ -782,20 +815,30 @@ ATRIB : TK_ID TK_ATRIB E
 
             $1.t = consulta_ts( $1.v ) ;
 
-            if(( $1.t.tipo_base == "i" and $3.t.tipo_base == "d" ) or ( $1.t.tipo_base == "d" and $3.t.tipo_base == "i" )) {
+            if ( ( $1.t.tipo_base == "c" and $3.t.tipo_base == "s" ) ) {
+              // Pior tratamento de erro que já fiz na minha vida.
+            } else if(( $1.t.tipo_base == "i" and $3.t.tipo_base == "d" ) or
+                      ( $1.t.tipo_base == "d" and $3.t.tipo_base == "i" )) {
               // Pior tratamento de erro que já fiz na minha vida.
             } else if( $1.t.tipo_base != $3.t.tipo_base )
               erro( "Tipos incompatíveis na atribuição " + $1.t.tipo_base + ", " +  $3.t.tipo_base + " " );
 
-            if( $1.t.tipo_base == "s" )
+            if( $1.t.tipo_base == "s" && $3.t.tipo_base == "s") {
               $$.c = $3.c + "  strncpy( " + $1.v + ", " + $3.v + ", 256 );\n";
-            else
+            }
+            else if( $1.t.tipo_base == "c" && $3.t.tipo_base == "s") {
+              string aux = gera_nome_var_temp( "s" );
+              $$.c = $3.c + "  strncpy( " + aux + ", " + $3.v + ", 256 );\n";
+              $$.c += $3.c + "  " + $1.v + " = " + aux + "[0];\n";
+            }
+            else {
               $$.c = $3.c + "  " + $1.v + " = " + $3.v + ";\n";
+            }
 
           }
         }
       | TK_ID '[' E ']' TK_ATRIB E
-        { // Falta testar: tipo, limite do array, e se a variável existe
+        {
           Tipo tipoArray = consulta_ts( $1.v );
           $$.t = Tipo( tipoArray.tipo_base );
 
@@ -818,8 +861,6 @@ ATRIB : TK_ID TK_ATRIB E
         }
       | TK_ID '[' E ']' '[' E ']' TK_ATRIB E
         {
-        // Falta testar: tipo, limite do array, e se a variável existe
-        // Não sei mais se falta. Codei, mas ignorei o comentário acima.
         Tipo tipoArray = consulta_ts( $1.v );
         $$.t = Tipo( tipoArray.tipo_base );
 
@@ -949,8 +990,6 @@ F : TK_CINT
     }
   | TK_ID '[' E ']' '[' E ']'
     {
-      // Implementar: vai criar uma temporaria int para o índice e
-      // outra do tipoBase do array para o valor recuperado.
       Tipo tipoArray = consulta_ts( $1.v );
       $$.t = Tipo( tipoArray.tipo_base );
       if( tipoArray.ndim != 2 )
@@ -1579,7 +1618,9 @@ string declara_variavel( string nome, Tipo tipo ) {
        erro( "Bug muito sério..." );
   }
 
-  return em_C[ tipo.tipo_base ] + nome + indice;
+  string ref = tipo.referencia ? "&" : "";
+
+  return em_C[ tipo.tipo_base ] + ref + nome + indice;
 }
 
 string gera_teste_limite_array( string indice_1, Tipo tipoArray ) {

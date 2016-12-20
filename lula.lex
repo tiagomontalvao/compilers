@@ -21,7 +21,7 @@ COMMENT "(*"([^*]|"*"[^)])*"*)"
 {DELIM}    {}
 {COMMENT}  {}
 
-"Políticos"		{ yylval = Atributos( yytext ); return TK_VAR; }
+"Depoimentos"	{ yylval = Atributos( yytext ); return TK_VAR; }
 "é"        		{ yylval = Atributos( yytext ); return TK_IS; }
 "Que Deus tenha misericórdia desta nação" { yylval = Atributos( yytext ); return TK_PROGRAM; }
 "Príncipe"   	{ yylval = Atributos( yytext ); return TK_BEGIN; }
@@ -55,6 +55,7 @@ COMMENT "(*"([^*]|"*"[^)])*"*)"
 "desvia" 		{ yylval = Atributos( yytext ); return TK_RETURN; }
 "cospe" 		{ yylval = Atributos( yytext ); return TK_RETURN; }
 "exit"	 		{ yylval = Atributos( yytext ); return TK_EXIT; }
+"ref"	 		{ yylval = Atributos( yytext ); return TK_REF; }
 
 ":="       		{ yylval = Atributos( yytext ); return TK_ATRIB; }
 "="       		{ yylval = Atributos( yytext ); return TK_ATRIB; }
