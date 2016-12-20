@@ -53,15 +53,15 @@ Príncipe
 	} Enquanto a > 1;
 
 	a recebe 2;
-  Delação premiada (a) Príncipe
-    Caso 1:
-      Como printa, deputado? 'a' +n;
-      Bessias;
-    Caso 2:
-      Como printa, deputado? 'a' +n;
-      Bessias;
-    Padrão:
-      Como printa, deputado? 'a' +n;
-  Suíço
+	Delação premiada (a) Príncipe
+	Caso 1:
+		Como printa, deputado? 'a' +n;
+		Bessias;
+	Caso 2:
+		Como printa, deputado? 'a' +n;
+		Bessias;
+	Padrão:
+		Como printa, deputado? 'a' +n;
+	Suíço
 
 Suíço.

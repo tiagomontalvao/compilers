@@ -6,7 +6,7 @@ Depoimentos
   3. c é integro;
 
 // Função que recebe parâmetros por cópia e referência e retorna uma string
-PEC de cadeia fimdomundo( ref integro a; integro b; integro c );
+PEC de cadeia fim_do_mundo( ref integro a; integro b; integro c );
 Príncipe
 	a recebe 5;
 	desvia 'pec55';
@@ -19,7 +19,7 @@ Príncipe
 	b recebe 2;
 	b recebe 3;
 	Como printa, deputado? a +n;
-	Como printa, deputado? fimdomundo( a, b, 3 ) +n;
+	Como printa, deputado? fim_do_mundo( a, b, 3 ) +n;
 	Como printa, deputado? a +n;
 
 	// Linha abaixo dá erro (constante passada por referẽncia)

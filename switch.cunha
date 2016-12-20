@@ -7,6 +7,7 @@ Príncipe
 
 	a recebe 5;
 	Delação premiada (a)
+	Príncipe
 		Caso 1:
 			Como printa, deputado? 'a' +n;
 			Bessias;
@@ -15,5 +16,6 @@ Príncipe
 			Bessias;
 		Padrão:
 			Como printa, deputado? 'c' +n;
+	Suíço
 
 Suíço.
