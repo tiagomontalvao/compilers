@@ -532,13 +532,13 @@ CMD_WATCH : TK_WATCH TK_ID
             $$.c += "cout << endl;\n";
           }
 
-CMD_SWITCH : TK_SWITCH TK_ABREP TK_ID TK_FECHAP SWITCH_BLOCO
+CMD_SWITCH : TK_SWITCH TK_ABREP TK_ID TK_FECHAP TK_BEGIN SWITCH_BLOCO TK_END
              {
                $$.c = "";
                string fim_label = gera_label("fim_switch");
 
                 // Gerando as variáveis para comparação.
-                for (int i = $5.lista_str.size() - 1; i >= 0; i--) {
+                for (int i = $6.lista_str.size() - 1; i >= 0; i--) {
                     string var = gera_nome_var_temp( "b" );
                     $$.c += var + " = " + $3.v + " == " + $$.lista_str[i] + ";\n";
                     $$.c += "if (" + var + ") goto " + $$.switch_labels[i] + ";\n";
@@ -546,21 +546,21 @@ CMD_SWITCH : TK_SWITCH TK_ABREP TK_ID TK_FECHAP SWITCH_BLOCO
                 $$.c += "\n";
 
                 // Se houver default.
-                if ($5.default_label != "") {
-                  $$.c += "goto " + $5.default_label + ";\n\n";
+                if ($6.default_label != "") {
+                  $$.c += "goto " + $6.default_label + ";\n\n";
                 }
 
                 // Para cada case.
-                for (int i = $5.lista_str.size() - 1; i >= 0; i--) {
-                  $$.c += $5.switch_labels[i] + ":\n";
-                  $$.c += $5.switch_code[i] + "\n";
-                  if ($5.tem_break[i]) $$.c += "goto " + fim_label + ";\n";
+                for (int i = $6.lista_str.size() - 1; i >= 0; i--) {
+                  $$.c += $6.switch_labels[i] + ":\n";
+                  $$.c += $6.switch_code[i] + "\n";
+                  if ($6.tem_break[i]) $$.c += "goto " + fim_label + ";\n";
                 }
 
                 // Se houver default.
-                if ($5.default_label != "") {
-                  $$.c += $5.default_label + ":\n";
-                  $$.c += $5.default_code + "\n";
+                if ($6.default_label != "") {
+                  $$.c += $6.default_label + ":\n";
+                  $$.c += $6.default_code + "\n";
                 }
 
                 // Marcador final.
