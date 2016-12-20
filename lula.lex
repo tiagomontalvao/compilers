@@ -31,24 +31,24 @@ COMMENT "(*"([^*]|"*"[^)])*"*)"
 "Como printa, deputado?"  { yylval = Atributos( yytext ); return TK_COMOPRINTA; }
 "+n"  			{ yylval = Atributos( yytext ); return TK_NEWLINE; }
 "Mas o que é isso aqui?"  { yylval = Atributos( yytext ); return TK_WATCH; }
-"Leia" 			{ yylval = Atributos( yytext ); return TK_READ; }
-"If"       		{ yylval = Atributos( yytext ); return TK_IF; }
-"Then"     		{ yylval = Atributos( yytext ); return TK_THEN; }
-"Else"     		{ yylval = Atributos( yytext ); return TK_ELSE; }
-"For"      		{ yylval = Atributos( yytext ); return TK_FOR; }
-"While"   		{ yylval = Atributos( yytext ); return TK_WHILE; }
+"Como vota, deputado?" 			{ yylval = Atributos( yytext ); return TK_READ; }
+"Se"       		{ yylval = Atributos( yytext ); return TK_IF; }
+"preso amanhã"       		{ yylval = Atributos( yytext ); return TK_THEN; }
+"Senão"     		{ yylval = Atributos( yytext ); return TK_ELSE; }
+"Para"      		{ yylval = Atributos( yytext ); return TK_FOR; }
+"Enquanto"   		{ yylval = Atributos( yytext ); return TK_WHILE; }
 "Dá"      		{ yylval = Atributos( yytext ); return TK_DA; }
 "que"      		{ yylval = Atributos( yytext ); return TK_QUE; }
 "eu"      		{ yylval = Atributos( yytext ); return TK_EU; }
 "te"      		{ yylval = Atributos( yytext ); return TK_TE; }
 "dou"      		{ yylval = Atributos( yytext ); return TK_DOU; }
 "outra"      	{ yylval = Atributos( yytext ); return TK_OUTRA; }
-"Switch"		{ yylval = Atributos( yytext ); return TK_SWITCH; }
+"Delação premiada"		{ yylval = Atributos( yytext ); return TK_SWITCH; }
 "Caso"			{ yylval = Atributos( yytext ); return TK_CASE; }
-"Default"		{ yylval = Atributos( yytext ); return TK_DEFAULT; }
+"Padrão"		{ yylval = Atributos( yytext ); return TK_DEFAULT; }
 "Bessias"		{ yylval = Atributos( yytext ); return TK_BREAK; }
-"To"       		{ yylval = Atributos( yytext ); return TK_TO; }
-"Do"       		{ yylval = Atributos( yytext ); return TK_DO; }
+"até"       		{ yylval = Atributos( yytext ); return TK_TO; }
+"faça"       		{ yylval = Atributos( yytext ); return TK_DO; }
 "delação"    	{ yylval = Atributos( yytext ); return TK_ARRAY; }
 "de"       		{ yylval = Atributos( yytext ); return TK_DE; }
 "PEC" 			{ yylval = Atributos( yytext ); return TK_FUNCTION; }
@@ -68,9 +68,12 @@ COMMENT "(*"([^*]|"*"[^)])*"*)"
 "=="       		{ yylval = Atributos( yytext ); return TK_IGU; }
 "!="       		{ yylval = Atributos( yytext ); return TK_DIF; }
 
-"And"      		{ yylval = Atributos( yytext ); return TK_AND; }
-"Or"      		{ yylval = Atributos( yytext ); return TK_OR; }
-"Not"      		{ yylval = Atributos( yytext ); return TK_NOT; }
+"and"      		{ yylval = Atributos( yytext ); return TK_AND; }
+"&&"      		{ yylval = Atributos( yytext ); return TK_AND; }
+"or"      		{ yylval = Atributos( yytext ); return TK_OR; }
+"||"      		{ yylval = Atributos( yytext ); return TK_OR; }
+"not"      		{ yylval = Atributos( yytext ); return TK_NOT; }
+"!"      		{ yylval = Atributos( yytext ); return TK_NOT; }
 
 "foi citado em" { yylval = Atributos( yytext ); return TK_IN; }
 
