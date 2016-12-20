@@ -1114,7 +1114,7 @@ void inicializa_operadores() {
   tipo_opr["d*d"] = "d";
 
   // Resultados para o operador "/"
-  tipo_opr["i/i"] = "d";
+  tipo_opr["i/i"] = "i";
   tipo_opr["i/d"] = "d";
   tipo_opr["d/i"] = "d";
   tipo_opr["d/d"] = "d";
