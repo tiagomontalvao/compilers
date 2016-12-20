@@ -36,6 +36,7 @@ struct Tipo {
   vector<Tipo> params;
   bool referencia;
   bool funcao_string;
+  bool constante;
 
   Tipo() {} // Construtor Vazio
 
@@ -44,6 +45,7 @@ struct Tipo {
     ndim = BASICO;
     referencia = false;
     funcao_string = false;
+    constante = false;
   }
 
   Tipo( string base, int tam ) {
@@ -52,6 +54,7 @@ struct Tipo {
     this->tam[0] = tam;
     referencia = false;
     funcao_string = false;
+    constante = false;
   }
 
   Tipo( string base, int tam_0, int tam_1 ) {
@@ -61,6 +64,7 @@ struct Tipo {
     this->tam[1] = tam_1;
     referencia = false;
     funcao_string = false;
+    constante = false;
   }
 
   Tipo( Tipo retorno, vector<Tipo> params ) {
@@ -69,6 +73,7 @@ struct Tipo {
     this->params = params;
     referencia = false;
     funcao_string = false;
+    constante = false;
   }
 
   Tipo( Tipo retorno, vector<Tipo> params, bool funcao_string ) {
@@ -77,6 +82,7 @@ struct Tipo {
     this->params = params;
     this->funcao_string = funcao_string;
     referencia = false;
+    constante = false;
   }
 };
 
@@ -928,11 +934,11 @@ E : E TK_MAIS E
 
 
 F : TK_CINT
-    { $$.v = $1.v; $$.t = Tipo( "i" ); $$.c = $1.c; }
+    { $$.v = $1.v; $$.t = Tipo( "i" ); $$.t.constante = true; $$.c = $1.c; }
   | TK_CDOUBLE
-    { $$.v = $1.v; $$.t = Tipo( "d" ); $$.c = $1.c; }
+    { $$.v = $1.v; $$.t = Tipo( "d" ); $$.t.constante = true; $$.c = $1.c; }
   | TK_CSTRING
-    { $$.v = $1.v; $$.t = Tipo( "s" ); $$.c = $1.c; }
+    { $$.v = $1.v; $$.t = Tipo( "s" ); $$.t.constante = true; $$.c = $1.c; }
   | TK_ID '[' E ']'
     {
       Tipo tipoArray = consulta_ts( $1.v );
@@ -1034,10 +1040,15 @@ F : TK_CINT
           for( int i = 0; i < (int) $3.lista_str.size() - 1; i++ ) {
             if ( $3.lista_tipo[i].tipo_base != tipo_func.params[i].tipo_base )
               erro( "Parâmetro de tipo incompatível" );
+            if ( tipo_func.params[i].referencia && $3.lista_tipo[i].constante )
+              erro( "Constante não pode ser passada por referência" );
             $$.c += $3.lista_str[i] + ", ";
           }
-          if ( $3.lista_str.size() > 0 )
+          if ( $3.lista_str.size() > 0 ) {
+            if ( tipo_func.params[$3.lista_str.size() - 1].referencia && $3.lista_tipo[$3.lista_str.size() - 1].constante )
+              erro( "Constante não pode ser passada por referência" );
             $$.c += $3.lista_str[$3.lista_str.size() - 1];
+          }
           $$.c += ", " + $$.v + " );\n";
       } else {
 
