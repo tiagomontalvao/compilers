@@ -13,7 +13,7 @@ DOUBLE  {NUMERO}+("."{NUMERO}+)?
 ID      {LETRA}({LETRA}|{NUMERO})*
 CSTRING "'"([^\n']|"''")*"'"
 
-COMMENT "(*"([^*]|"*"[^)])*"*)"
+COMMENT "//"[^\n]*
 
 %%
 

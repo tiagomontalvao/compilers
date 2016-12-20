@@ -128,7 +128,6 @@ string gera_teste_limite_array( string indice_1, Tipo tipoArray );
 string gera_teste_limite_array( string indice_1, string indice_2,
                                 Tipo tipoArray );
 
-void debug( string producao, Atributos atr );
 int toInt( string valor );
 string toString( int n );
 
@@ -1117,15 +1116,6 @@ int nlinha = 1;
 
 int yyparse();
 
-void debug( string producao, Atributos atr ) {
-/*
-  cerr << "Debug: " << producao << endl;
-  cerr << "  t: " << atr.t << endl;
-  cerr << "  v: " << atr.v << endl;
-  cerr << "  c: " << atr.c << endl;
-*/
-}
-
 void yyerror( const char* st )
 {
   printf( "%s", st );
@@ -1528,7 +1518,6 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
            "  " + ss.v + " = " + s1.v + " " + opr + " " + s3.v + ";\n";
   }
 
-  debug( "E: E " + opr + " E", ss );
   return ss;
 }
 
