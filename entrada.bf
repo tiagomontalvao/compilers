@@ -1,17 +1,14 @@
 Que Deus tenha misericórdia desta nação.
 
 Políticos
-	1. a é integro;
-	2. str é cadeia;
-
-PEC de cadeia soma( integro a );
-Príncipe
-	Como printa, deputado? 'Função soma()' +n;
-	desvia 'x';
-Suíço;
+	1. v é delação de [2] integros;
 
 Príncipe
-	Como printa, deputado? soma( 1 );
-	Como printa, deputado? ' ';
-	Como printa, deputado? soma( 1 );
+	v[0] = 10;
+	v[1] = 20;
+
+	If (v[0] == 10) And (v[1] == 20) Then
+		Como printa, deputado? 'IFZÃO, PORAR!' +n;
+	Else
+		Como printa, deputado? 'ELZÃO, AE!' +n;
 Suíço.

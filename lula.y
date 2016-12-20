@@ -1468,7 +1468,8 @@ Atributos gera_codigo_operador( Atributos s1, string opr, Atributos s3 ) {
     } else {
       string tmp = gera_nome_var_temp("b");
       ss.v = gera_nome_var_temp("b");
-      ss.c =  tmp + " = " + s3.v + ";\n" +
+      ss.c =  s3.c +
+              tmp + " = " + s3.v + ";\n" +
               ss.v + " = ! " + tmp + ";\n";
     }
   }
