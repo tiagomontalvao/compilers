@@ -21,7 +21,7 @@ COMMENT "(*"([^*]|"*"[^)])*"*)"
 {DELIM}    {}
 {COMMENT}  {}
 
-"Políticos"		{ yylval = Atributos( yytext ); return TK_VAR; }
+"Depoimentos"	{ yylval = Atributos( yytext ); return TK_VAR; }
 "é"        		{ yylval = Atributos( yytext ); return TK_IS; }
 "Que Deus tenha misericórdia desta nação" { yylval = Atributos( yytext ); return TK_PROGRAM; }
 "Príncipe"   	{ yylval = Atributos( yytext ); return TK_BEGIN; }

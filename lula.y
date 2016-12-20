@@ -720,10 +720,19 @@ CMD_DO_WHILE : TK_DO CMD_BLOCO TK_WHILE E
 
 CMD_FOR : TK_FOR NOME_VAR TK_ATRIB E TK_TO E TK_DO CMD_BLOCO
           {
+
+            if ( $2.t.ndim != 0 && $2.t.tipo_base != "i" && $2.t.tipo_base != "d" && $2.t.tipo_base != "c" )
+              erro( "Tipo incompatível no índice do for." );
+
             string var_fim = gera_nome_var_temp( $2.t.tipo_base );
             string label_teste = gera_label( "teste_for" );
             string label_fim = gera_label( "fim_for" );
             string condicao = gera_nome_var_temp( "b" );
+
+            if(( $2.t.tipo_base == "i" and $4.t.tipo_base == "d" ) or ( $2.t.tipo_base == "d" and $4.t.tipo_base == "i" )) {
+              // Pior tratamento de erro que já fiz na minha vida.
+            } else if( $2.t.tipo_base != $4.t.tipo_base )
+              erro( "Tipos incompatíveis na atribuição " + $2.t.tipo_base + ", " +  $4.t.tipo_base + " " );
 
             // Falta verificar os tipos... perde ponto se não o fizer.
             $$.c =  $4.c + $6.c +
@@ -788,8 +797,7 @@ COMOPRINTA : TK_COMOPRINTA E
         ;
 
 ATRIB : TK_ID TK_ATRIB E
-        { // Falta verificar se pode atribuir (perde ponto se não fizer).
-
+        {
 
           if ( $3.nome_da_funcao != "" ) {
 
@@ -801,20 +809,30 @@ ATRIB : TK_ID TK_ATRIB E
 
             $1.t = consulta_ts( $1.v ) ;
 
-            if(( $1.t.tipo_base == "i" and $3.t.tipo_base == "d" ) or ( $1.t.tipo_base == "d" and $3.t.tipo_base == "i" )) {
+            if ( ( $1.t.tipo_base == "c" and $3.t.tipo_base == "s" ) ) {
+              // Pior tratamento de erro que já fiz na minha vida.
+            } else if(( $1.t.tipo_base == "i" and $3.t.tipo_base == "d" ) or
+                      ( $1.t.tipo_base == "d" and $3.t.tipo_base == "i" )) {
               // Pior tratamento de erro que já fiz na minha vida.
             } else if( $1.t.tipo_base != $3.t.tipo_base )
               erro( "Tipos incompatíveis na atribuição " + $1.t.tipo_base + ", " +  $3.t.tipo_base + " " );
 
-            if( $1.t.tipo_base == "s" )
+            if( $1.t.tipo_base == "s" && $3.t.tipo_base == "s") {
               $$.c = $3.c + "  strncpy( " + $1.v + ", " + $3.v + ", 256 );\n";
-            else
+            }
+            else if( $1.t.tipo_base == "c" && $3.t.tipo_base == "s") {
+              string aux = gera_nome_var_temp( "s" );
+              $$.c = $3.c + "  strncpy( " + aux + ", " + $3.v + ", 256 );\n";
+              $$.c += $3.c + "  " + $1.v + " = " + aux + "[0];\n";
+            }
+            else {
               $$.c = $3.c + "  " + $1.v + " = " + $3.v + ";\n";
+            }
 
           }
         }
       | TK_ID '[' E ']' TK_ATRIB E
-        { // Falta testar: tipo, limite do array, e se a variável existe
+        {
           Tipo tipoArray = consulta_ts( $1.v );
           $$.t = Tipo( tipoArray.tipo_base );
 
@@ -837,8 +855,6 @@ ATRIB : TK_ID TK_ATRIB E
         }
       | TK_ID '[' E ']' '[' E ']' TK_ATRIB E
         {
-        // Falta testar: tipo, limite do array, e se a variável existe
-        // Não sei mais se falta. Codei, mas ignorei o comentário acima.
         Tipo tipoArray = consulta_ts( $1.v );
         $$.t = Tipo( tipoArray.tipo_base );
 
@@ -966,8 +982,6 @@ F : TK_CINT
     }
   | TK_ID '[' E ']' '[' E ']'
     {
-      // Implementar: vai criar uma temporaria int para o índice e
-      // outra do tipoBase do array para o valor recuperado.
       Tipo tipoArray = consulta_ts( $1.v );
       $$.t = Tipo( tipoArray.tipo_base );
       if( tipoArray.ndim != 2 )

@@ -5,23 +5,23 @@ Políticos
 	2. nome1 é cadeia;
 	3. nome2 é cadeia;
 
-PEC de cadeias formata( cadeias a, b );
+PEC de cadeias formata( ref cadeias a, b );
 Príncipe
-	se Deus quiser e a > b
+	If a > b Then
 		desvia 'Sr(a). ' + a + ' ' + b;
-	mas senão
+	Else
 		desvia 'Mr(s). ' + b + ' ' + a;
 Suíço;
 
 Príncipe
 	Como printa, deputado? 'Digite o seu nome: ';
-	Leia nome1;
+	Leia nomes[0];
 	Como printa, deputado? 'Digite o seu sobrenome: ';
-	Leia nome2;
+	Leia nomes[1];
 	Como printa, deputado? +n;
 
-	Como printa, deputado? 'Bom dia, ' + formata( nome1, nome2 ) +n;
-	Como printa, deputado? 'Bom dia, ' + formata( ' ' + nome1, nome2 ) +n;
-	Como printa, deputado? 'Bom dia, ' + formata( nome1, ' ' + nome2 ) +n;
+	Como printa, deputado? 'Bom dia, ' + formata( nomes[0], nomes[1] ) +n;
+	Como printa, deputado? 'Bom dia, ' + formata( ' ' + nomes[0], nomes[1] ) +n;
+	Como printa, deputado? 'Bom dia, ' + formata( nomes[0], ' ' + nomes[1] ) +n;
 
 Suíço.
