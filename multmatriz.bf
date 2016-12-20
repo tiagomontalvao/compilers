@@ -1,6 +1,6 @@
 Que Deus tenha misericórdia desta nação.
 
-Políticos
+Depoimentos
 	1. seed é integro;
 	2. a é delação de [3][4] corruptos;
 	3. b é delação de [4][2] corruptos;
@@ -11,7 +11,7 @@ Políticos
 	8. aux é integro;
 
 PEC de integros pseudo_random;
-Políticos
+Depoimentos
 	1. aux é integro;
 Príncipe
 	
@@ -22,12 +22,12 @@ Príncipe
 Suíço;
 
 PEC de vento imprime( delação de [3][2] corruptos m; integros l, c );
-Políticos
+Depoimentos
 	1. i é integro;
 	2. j é integro;
 Príncipe
-	For i recebe 0 To l-1 Do {
-		For j recebe 0 To c-1 Do {
+	Para i recebe 0 até l-1 faça {
+		Para j recebe 0 até c-1 faça {
 			Como printa, deputado? m[i][j];
 			Como printa, deputado? ' \t';
 		}
@@ -38,21 +38,21 @@ Suíço;
 PEC de vento multiplica( delação de [3][4] corruptos a; delação de [4][2] corruptos b;
 						 integros lin_a, col_a, lin_b, col_b; delação de [3][2] corruptos c);
 
-Políticos
+Depoimentos
 	1. i é integro;
 	2. j é integro;
 	3. k é integro;
 Príncipe
 	
-	If ( lin_b != col_a ) Then {
+	Se ( lin_b != col_a ) rouba {
 		Como printa, deputado? 'Matrizes incompativeis para multiplicação' +n  ;
 		exit;
 	}
 
-	For i recebe 0 To lin_a-1 Do {
-		For j recebe 0 To col_b-1 Do {
+	Para i recebe 0 até lin_a-1 faça {
+		Para j recebe 0 até col_b-1 faça {
 			c[i][j] recebe 0;
-			For k recebe 0 To lin_b-1 Do {
+			Para k recebe 0 até lin_b-1 faça {
 				c[i][j] recebe c[i][j] + (a[i][k] * b[k][j]);
 			}
 		}
@@ -63,15 +63,13 @@ Suíço;
 
 Príncipe
 	seed recebe 5323;
-	For i recebe 0 To 2 Do {
-		For j recebe 0 To 3 Do {
+	Para i recebe 0 até 2 faça {
+		Para j recebe 0 até 3 faça {
 			a[i][j] recebe pseudo_random() mod 10;
-			aux recebe a[i][j];
-			Como printa, deputado? aux + ' ' + a[i][j] +n;
 		}
 	}
-	For i recebe 0 To 3 Do {
-		For j recebe 0 To 1 Do {
+	Para i recebe 0 até 3 faça {
+		Para j recebe 0 até 1 faça {
 			b[i][j] recebe pseudo_random() mod 10;
 		}
 	}

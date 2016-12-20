@@ -18,21 +18,10 @@ Suíço;
 
 Príncipe
 
-	// Testa passagem por referência
-	a recebe 1;
-	b recebe 2;
-	b recebe 3;
-	Como printa, deputado? a +n;
-	Como printa, deputado? bla( a, b, 3 ) +n;
-	Como printa, deputado? a +n;
-
-	// Linha abaixo dá erro (constante passada por referẽncia)
-	// Como printa, deputado? bla( 1, b, c ) +n;
-
 	// Inicializa vetores
-	For i recebe 0 To 9 Do
+	Para i recebe 0 até 9 faça
 		v1[i] recebe i;
-	For i recebe 0 To 9 Do
+	Para i recebe 0 até 9 faça
 		v2[i] recebe i;
 
 	// Operadores "foi citado em" (in), == e != para vetores
@@ -43,5 +32,36 @@ Príncipe
 	Como printa, deputado? 'v1 == v2 ';
 	Como printa, deputado? v1 == v2 +n;
 
+	// Comando extra que fizemos para nossa linguagem.
+	a = 779;
+	Mas o que é isso aqui? a;
+
+	// While.
+	a recebe 10;
+	Dá a > 1 que eu te dou outra {
+		a = a - 1;
+		Como printa, deputado? a +n;
+	}
+
+	Como printa, deputado? +n;
+
+	// Do-While
+	a recebe 10;
+	faça {
+		a recebe a-1;
+		Como printa, deputado? a +n;
+	} Enquanto a > 1;
+
+	a recebe 2;
+  Delação premiada (a) Príncipe
+    Caso 1:
+      Como printa, deputado? 'a' +n;
+      Bessias;
+    Caso 2:
+      Como printa, deputado? 'a' +n;
+      Bessias;
+    Padrão:
+      Como printa, deputado? 'a' +n;
+  Suíço
 
 Suíço.

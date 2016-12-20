@@ -1,23 +1,23 @@
 Que Deus tenha misericórdia desta nação.
 
-Políticos
+Depoimentos
 	1. nomes é delação de [2] cadeias;
 	2. nome1 é cadeia;
 	3. nome2 é cadeia;
 
-PEC de cadeias formata( ref cadeias a, b );
+PEC de cadeias formata( cadeias a, b );
 Príncipe
-	If a > b Then
+	Se a > b rouba
 		desvia 'Sr(a). ' + a + ' ' + b;
-	Else
+	Senão faz
 		desvia 'Mr(s). ' + b + ' ' + a;
 Suíço;
 
 Príncipe
 	Como printa, deputado? 'Digite o seu nome: ';
-	Leia nomes[0];
+	Como vota, deputado? nomes[0];
 	Como printa, deputado? 'Digite o seu sobrenome: ';
-	Leia nomes[1];
+	Como vota, deputado? nomes[1];
 	Como printa, deputado? +n;
 
 	Como printa, deputado? 'Bom dia, ' + formata( nomes[0], nomes[1] ) +n;

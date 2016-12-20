@@ -1,0 +1,29 @@
+Que Deus tenha misericórdia desta nação.
+
+Depoimentos
+  1. a é integro;
+  2. b é integro;
+  3. c é integro;
+
+// Função que recebe parâmetros por cópia e referência e retorna uma string
+PEC de cadeia fimdomundo( ref integro a; integro b; integro c );
+Príncipe
+	a recebe 5;
+	desvia 'pec55';
+Suíço;
+
+Príncipe
+
+	// Testa passagem por referência
+	a recebe 1;
+	b recebe 2;
+	b recebe 3;
+	Como printa, deputado? a +n;
+	Como printa, deputado? fimdomundo( a, b, 3 ) +n;
+	Como printa, deputado? a +n;
+
+	// Linha abaixo dá erro (constante passada por referẽncia)
+	// Como printa, deputado? bla( 1, b, c ) +n;
+
+
+Suíço.

@@ -481,18 +481,6 @@ BLOCO : TK_BEGIN { var_temp.push_back( "" );} CMDS TK_END
           }
         }
       ;
-/*
-CMDS : CMD ';' CMDS
-       { $$.c = $1.c + $3.c; }
-     | CMD_IF CMDS
-       { $$.c = $1.c + $2.c; }
-     | CMD_FOR CMDS
-       { $$.c = $1.c + $2.c; }
-     | CMD_WHILE CMDS
-       { $$.c = $1.c + $2.c; }
-     | { $$.c = ""; }
-     ;
-*/
 
 CMDS : CMD_ONELINE ';' CMDS
        { $$.c = $1.c + $3.c; }
@@ -509,6 +497,7 @@ CMD_ONELINE : COMOPRINTA
             | CMD_WATCH
             | RETURN
             | EXIT
+            | CMD_DO_WHILE
             | E
             ;
 
@@ -516,7 +505,6 @@ CMD_BLOCO : BLOCO
           | CMD_IF
           | CMD_FOR
           | CMD_WHILE
-          | CMD_DO_WHILE
           | CMD_SWITCH
           ;
 
