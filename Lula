@@ -1,0 +1,17 @@
+Alunos: Igor Carpanese e Tiago Montalvão
+
+Pela primeira vez, rode apenas o comando
+
+make
+
+Depois, rode make com cada um dos programas fornecidos.
+Existem 3 programas pedidos e alguns outros com funcionalidades da linguagem:
+
+- mdc.cunha
+- multmatriz.cunha
+- concatstring.cunha
+- referencia.cunha
+- opr_in_igual.cunha
+- while_do-while.cunha
+- switch.cunha
+
